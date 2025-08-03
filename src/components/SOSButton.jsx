@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const COLORS = {
   accentRed: '#e53935',
@@ -39,10 +39,14 @@ const SOSButton = ({ user }) => {
   };
 
   const sendSOS = async (location) => {
-    await addDoc(collection(db, "sos_alerts"), {
+    const sosRef = doc(db, "sos_alerts", "latest");
+    await setDoc(sosRef, {
+      sender: user?.email || "Anonymous",
       user: user?.email || "Anonymous",
       timestamp: serverTimestamp(),
       location,
+      status: 'active',
+      resolved: false,
     });
     setOpen(true);
   };

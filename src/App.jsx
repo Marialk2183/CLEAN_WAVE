@@ -5,15 +5,16 @@ import EventsMap from "./components/EventsMap";
 import Chatbot from "./components/Chatbot";
 import Leaderboard from "./components/Leaderboard";
 import CarbonFootprintCalculator from "./components/CarbonFootprintCalculator";
-import DonationButton from "./components/DonationButton";
 import SOSButton from "./components/SOSButton";
 import GamificationEvents from "./components/GamificationEvents";
 import ImageClassifierChatbot from "./components/ImageClassifierChatbot";
+import PunchyLines from "./components/PunchyLines";
+import OurWork from "./components/OurWork";
 import { Card, Alert, Button, Row, Col, Container } from 'react-bootstrap';
 import Box from '@mui/material/Box';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { db } from './firebase';
-import { doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Layout from "./components/Layout";
 import HeroCarousel from "./components/HeroCarousel";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -75,14 +76,21 @@ function App() {
   const [joinedGamification, setJoinedGamification] = useState([]);
   const [votedGamification, setVotedGamification] = useState([]);
   const [helpedMessage, setHelpedMessage] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('login');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleAuth = (email, password, mode) => {
     setUser({ email, isAdmin: mode === 'admin' });
+    setShowLoginModal(false);
   };
   const handleLogout = () => setUser(null);
+  
+  const handleLoginClick = () => {
+    setShowLoginModal(true);
+  };
 
   // Real-time SOS Firestore logic
   useEffect(() => {
@@ -111,9 +119,14 @@ function App() {
   // When user clicks "Helped"
   const handleHelped = async () => {
     const sosDoc = doc(db, 'sos_alerts', 'latest');
-    await updateDoc(sosDoc, { status: 'resolved', resolved: true });
+    await updateDoc(sosDoc, { 
+      status: 'resolved', 
+      resolved: true,
+      helpedBy: user?.email || 'Anonymous',
+      helpedAt: serverTimestamp()
+    });
     setSosAlert(null);
-    setHelpedMessage("I'm saved! Thank you for the help.");
+    setHelpedMessage("SOS marked as resolved! Thank you for helping.");
     setTimeout(() => setHelpedMessage(null), 5000);
   };
 
@@ -139,9 +152,17 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Layout user={user}>
+      <Layout user={user} onLoginClick={handleLoginClick}>
         <HeroCarousel />
-        <Container className="flex-grow-1" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+        
+        {/* Punchy Lines Section */}
+        <Box sx={{ 
+          mt: { xs: 3, sm: 4, md: 6 },
+          mb: { xs: 2, sm: 3, md: 4 }
+        }}>
+          <PunchyLines />
+        </Box>
+        
           {user && sosAlert && (
             <Alert 
               variant="danger" 
@@ -178,9 +199,17 @@ function App() {
               {helpedMessage}
             </Alert>
           )}
-          {!user && (
-            <AuthForm onAuth={handleAuth} />
-          )}
+          
+          {/* Our Work Section */}
+          <Box sx={{ 
+            mt: 4, 
+            mb: 4,
+            display: 'flex',
+            justifyContent: 'center',
+            px: { xs: 2, sm: 4, md: 6 }
+          }}>
+            <OurWork />
+          </Box>
           {/* Impact Stats Section */}
           <Row className="mb-4 text-center impact-animate" sx={{ mx: 0 }}>
             <Col xs={6} sm={6} md={3} className="mb-3">
@@ -246,109 +275,91 @@ function App() {
           </Row>
           
           {/* Leaderboard Section */}
-          <Box sx={{ 
-            mb: { xs: 4, sm: 6 }, 
-            display: 'flex', 
-            justifyContent: 'center',
-            px: { xs: 0, sm: 2 }
-          }}>
-            <Leaderboard />
-          </Box>
+          <Leaderboard />
           
           {/* PostFeed Section */}
-          <Box sx={{ 
-            mb: { xs: 4, sm: 6 }, 
-            display: 'flex', 
-            justifyContent: 'center',
-            px: { xs: 0, sm: 2 }
-          }}>
-            <PostFeed />
-          </Box>
+          <PostFeed />
           
           {/* EventsMap and CarbonFootprint Section */}
-          <Box sx={{ mb: { xs: 4, sm: 6 } }}>
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              gap: { xs: 3, sm: 4 },
-              width: '100%',
-              px: { xs: 0, sm: 2 },
-              my: { xs: 2, sm: 4 }
-            }}>
-              <Box sx={{ width: '100%' }}>
-                <EventsMap
-                  user={user}
-                  joinedEvents={joinedEvents}
-                  onJoinEvent={handleJoinMapEvent}
-                />
-              </Box>
-              <Box sx={{ width: '100%' }}>
-                <CarbonFootprintCalculator />
-              </Box>
-            </Box>
-          </Box>
+          <EventsMap
+            user={user}
+            joinedEvents={joinedEvents}
+            onJoinEvent={handleJoinMapEvent}
+          />
+          <CarbonFootprintCalculator />
           
           {/* ImageClassifierChatbot Section */}
-          <Box sx={{ 
-            mb: { xs: 4, sm: 6 }, 
-            display: 'flex', 
-            justifyContent: 'center',
-            px: { xs: 0, sm: 2 }
-          }}>
-            <ImageClassifierChatbot floating={false} />
-          </Box>
+          <ImageClassifierChatbot floating={false} />
           
           {/* Donation and Gamification Section */}
           <div id="donate"></div>
           {user ? (
             <>
-              <Box sx={{ 
-                mb: { xs: 4, sm: 6 }, 
-                display: 'flex', 
-                justifyContent: 'center',
-                px: { xs: 0, sm: 2 }
-              }}>
-                <DonationButton />
-              </Box>
-              <div id="get-involved"></div>
-              <Box sx={{ 
-                mb: { xs: 4, sm: 6 }, 
-                display: 'flex', 
-                justifyContent: 'center',
-                px: { xs: 0, sm: 2 }
-              }}>
-                <GamificationEvents
-                  user={user}
-                  joined={joinedGamification}
-                  voted={votedGamification}
-                  onJoin={handleJoinGamification}
-                  onVote={handleVoteGamification}
-                />
-              </Box>
+              <GamificationEvents
+                user={user}
+                joined={joinedGamification}
+                voted={votedGamification}
+                onJoin={handleJoinGamification}
+                onVote={handleVoteGamification}
+              />
             </>
           ) : (
-            <Box sx={{ 
-              mb: { xs: 4, sm: 6 }, 
-              display: 'flex', 
-              justifyContent: 'center',
-              px: { xs: 1, sm: 2 }
-            }}>
-              <Alert 
-                variant="warning" 
-                className="text-center my-4 fade-in-section visible"
-                sx={{ 
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  py: { xs: 2, sm: 3 }
-                }}
-              >
-                Please log in or sign up to access Donation and Gamification features.
-              </Alert>
-            </Box>
+            <Alert 
+              variant="warning" 
+              className="text-center my-4 fade-in-section visible"
+              sx={{ 
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                py: { xs: 2, sm: 3 }
+              }}
+            >
+              Please log in or sign up to access Donation and Gamification features.
+            </Alert>
           )}
-          <SOSButton onSOS={handleSOS} />
-          <Chatbot />
-        </Container>  
+          
+          {/* SOS Button and Chatbot - Only show when user is logged in */}
+          {user && (
+            <>
+              <SOSButton onSOS={handleSOS} />
+              <Chatbot />
+            </>
+          )}
         <SOSNotificationBar />
+        
+        {/* Login Modal */}
+        {showLoginModal && (
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              backdropFilter: 'blur(4px)',
+            }}
+            onClick={() => setShowLoginModal(false)}
+          >
+            <Box
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                width: '100%',
+                maxWidth: 800,
+                mx: 2,
+              }}
+            >
+              <AuthForm 
+                onAuth={handleAuth} 
+                initialMode={selectedRole}
+                onModeChange={setSelectedRole}
+              />
+            </Box>
+          </Box>
+        )}
+        
         {/* Footer */}
         {/* Remove the duplicate Contact Us / Partners / Copyright block and its parent footer. Only keep the Layout.jsx footer. */}
       </Layout>

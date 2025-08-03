@@ -146,11 +146,86 @@ const PostFeed = () => {
     setPostToDelete(null);
   };
 
+  const handleShare = (post) => {
+    const shareText = `${post.author} shared: "${post.content}"${post.location ? ` 📍 ${post.location}` : ''}`;
+    const shareUrl = window.location.href;
+    
+    // Create share data
+    const shareData = {
+      title: 'CleanWave Post',
+      text: shareText,
+      url: shareUrl
+    };
+
+    // Try native sharing first
+    if (navigator.share) {
+      navigator.share(shareData).catch(console.error);
+    } else {
+      // Fallback to manual sharing options
+      const shareOptions = [
+        {
+          name: 'WhatsApp',
+          url: `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
+          icon: '💬'
+        },
+        {
+          name: 'Instagram',
+          url: `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`,
+          icon: '📷'
+        },
+        {
+          name: 'Facebook',
+          url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
+          icon: '📘'
+        },
+        {
+          name: 'Twitter',
+          url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+          icon: '🐦'
+        },
+        {
+          name: 'Copy Link',
+          action: () => {
+            navigator.clipboard.writeText(shareUrl);
+            alert('Link copied to clipboard!');
+          },
+          icon: '📋'
+        }
+      ];
+
+      // Show share options
+      const selectedOption = window.confirm(
+        'Choose sharing method:\n\n' +
+        shareOptions.map((option, index) => `${index + 1}. ${option.icon} ${option.name}`).join('\n') +
+        '\n\nClick OK to open WhatsApp, or Cancel to see other options.'
+      );
+
+      if (selectedOption) {
+        // Open WhatsApp
+        window.open(shareOptions[0].url, '_blank');
+      } else {
+        // Show other options
+        const option = window.prompt(
+          'Enter number for sharing option:\n' +
+          shareOptions.map((opt, idx) => `${idx + 1}. ${opt.icon} ${opt.name}`).join('\n')
+        );
+        
+        const optionIndex = parseInt(option) - 1;
+        if (optionIndex >= 0 && optionIndex < shareOptions.length) {
+          const selectedShareOption = shareOptions[optionIndex];
+          if (selectedShareOption.action) {
+            selectedShareOption.action();
+          } else {
+            window.open(selectedShareOption.url, '_blank');
+          }
+        }
+      }
+    }
+  };
+
   return (
     <Box
       sx={{
-        background: '#E3F2FD',
-        py: { xs: 2, sm: 3, md: 4 },
         width: '100%',
         maxWidth: 4800,
         mx: 'auto',
@@ -458,6 +533,7 @@ const PostFeed = () => {
                             💬 Comment ({comments[post.id]?.length || 0})
                           </Button>
                           <Button
+                            onClick={() => handleShare(post)}
                             fullWidth={isMobile}
                             sx={{ 
                               color: COLORS.accentBrown,

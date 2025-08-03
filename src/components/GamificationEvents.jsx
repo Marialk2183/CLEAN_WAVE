@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useEffect } from "react";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -7,7 +10,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 const COLORS = {
   green: '#A8E6CF',
@@ -41,13 +44,19 @@ const events = [
     status: "Upcoming",
     image: "https://static-cdn.toi-media.com/www/uploads/2018/08/000_18D7PC.jpg"
   },
+  {
+    id: 4,
+    name: "Bottle Blitz",
+    description: "Find the most bottles in 15 minutes",
+    status: "Upcoming",
+    image: "https://images.pexels.com/photos/18674200/pexels-photo-18674200/free-photo-of-empty-plastic-bottle-in-sand.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+  },
 ];
 
 const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
   const [eventStats, setEventStats] = useState({});
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const fetchEventStats = async () => {
@@ -70,22 +79,18 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
       alert("Please log in to join events!");
       return;
     }
-    
+
     try {
-      // Update local state
       onJoin(eventId);
-      
-      // Update Firebase
       const eventRef = doc(db, "eventStats", `event_${eventId}`);
       const currentStats = eventStats[`event_${eventId}`] || { joins: 0, votes: 0 };
-      
+
       await setDoc(eventRef, {
         joins: currentStats.joins + 1,
-        votes: currentStats.votes || 0,
+        votes: currentStats.votes,
         lastUpdated: serverTimestamp()
       }, { merge: true });
-      
-      // Update local stats
+
       setEventStats(prev => ({
         ...prev,
         [`event_${eventId}`]: {
@@ -93,7 +98,7 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
           joins: (prev[`event_${eventId}`]?.joins || 0) + 1
         }
       }));
-      
+
       alert("Successfully joined the event! 🎉");
     } catch (error) {
       console.error("Error joining event:", error);
@@ -106,22 +111,18 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
       alert("Please log in to vote!");
       return;
     }
-    
+
     try {
-      // Update local state
       onVote(eventId);
-      
-      // Update Firebase
       const eventRef = doc(db, "eventStats", `event_${eventId}`);
       const currentStats = eventStats[`event_${eventId}`] || { joins: 0, votes: 0 };
-      
+
       await setDoc(eventRef, {
-        joins: currentStats.joins || 0,
+        joins: currentStats.joins,
         votes: currentStats.votes + 1,
         lastUpdated: serverTimestamp()
       }, { merge: true });
-      
-      // Update local stats
+
       setEventStats(prev => ({
         ...prev,
         [`event_${eventId}`]: {
@@ -129,7 +130,7 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
           votes: (prev[`event_${eventId}`]?.votes || 0) + 1
         }
       }));
-      
+
       alert("Vote recorded! Thank you for participating! 🗳️");
     } catch (error) {
       console.error("Error voting:", error);
@@ -140,140 +141,105 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
   return (
     <Box
       sx={{
-        background: COLORS.background,
-        py: { xs: 2, sm: 3, md: 4 },
-        px: { xs: 1, sm: 2, md: 3 },
         width: '100%',
-        maxWidth: 1200,
-        mx: 'auto'
+        minHeight: '70vh',
+        py: 6,
+        px: { xs: 1, sm: 2, md: 3 },
+        backgroundColor:'#d9d2b4',
+        backgroundImage: 'linear-gradient(135deg, #d9d2b4 0%, #f5f5dc 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
       }}
     >
-      <Box 
+      <Typography 
+        variant="h4" 
+        
         sx={{ 
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(auto-fit, minmax(280px, 1fr))',
-            md: 'repeat(auto-fit, minmax(320px, 1fr))',
-            lg: 'repeat(3, 1fr)'
-          },
-          gap: { xs: 2, sm: 3, md: 4 },
+          fontWeight: 700, 
+          color: '#000',
+          textAlign: 'center',
+          mb: 4
+        }}
+      >
+        🎮 Gamification Events
+      </Typography>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: 4,
+          overflowX: 'auto',
+          py: 2,
+          px: 2,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: 3,
+          mx: 'auto',
+          maxWidth: '95%',
+          width: 'fit-content',
           justifyContent: 'center',
-          alignItems: 'stretch'
+          alignItems: 'center',
+          '&::-webkit-scrollbar': {
+            height: 8
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#aaa',
+            borderRadius: 4
+          }
         }}
       >
         {events.map(event => {
           const stats = eventStats[`event_${event.id}`] || { joins: 0, votes: 0 };
           const isJoined = joined.includes(event.id);
           const hasVoted = voted.includes(event.id);
-          
+
           return (
             <Card 
               key={event.id} 
-              sx={{ 
-                width: '100%',
-                maxWidth: { xs: '100%', sm: 400, md: 350 },
-                borderRadius: { xs: 2, sm: 3, md: 4 }, 
-                boxShadow: '0 4px 24px rgba(0,0,0,0.08)', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                background: COLORS.card, 
-                p: { xs: 0.5, sm: 1 },
-                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+              sx={{
+                minWidth: 320,
+                maxWidth: 380,
+                flex: '0 0 auto',
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                transition: '0.3s',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                border: '1px solid rgba(0,0,0,0.1)',
                 '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+                  transform: 'scale(1.02)',
+                  boxShadow: '0 16px 48px rgba(0,0,0,0.2)'
                 }
               }}
             >
               <CardMedia
                 component="img"
-                height={isMobile ? "140" : "180"}
+                height="160"
                 image={event.image}
                 alt={event.name}
-                sx={{ 
-                  borderTopLeftRadius: { xs: 8, sm: 12 }, 
-                  borderTopRightRadius: { xs: 8, sm: 12 },
-                  objectFit: 'cover'
-                }}
               />
-              <CardContent sx={{ flex: 1, p: { xs: 1.5, sm: 2 } }}>
-                <Typography 
-                  variant={isMobile ? "h6" : "h6"} 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: COLORS.green, 
-                    mb: 1,
-                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
-                    lineHeight: 1.3
-                  }}
-                >
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.black, mb: 1 }}>
                   {event.name}
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: COLORS.black, 
-                    mb: 2,
-                    fontSize: { xs: '0.875rem', sm: '0.9rem' },
-                    lineHeight: 1.5
-                  }}
-                >
+                <Typography variant="body2" sx={{ color: COLORS.black, mb: 2 }}>
                   {event.description}
                 </Typography>
-                
-                {/* Event Stats */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  mb: 2, 
-                  p: { xs: 0.75, sm: 1 }, 
-                  background: 'rgba(168, 230, 207, 0.1)', 
-                  borderRadius: 1 
-                }}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: COLORS.black, 
-                      fontWeight: 600,
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' }
-                    }}
-                  >
-                    👥 {stats.joins} Joined
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: COLORS.black, 
-                      fontWeight: 600,
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' }
-                    }}
-                  >
-                    🗳️ {stats.votes} Votes
-                  </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>👥 {stats.joins} Joined</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>🗳️ {stats.votes} Votes</Typography>
                 </Box>
-                
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: { xs: 1, sm: 2 }, 
-                  mt: 2,
-                  flexDirection: { xs: 'column', sm: 'row' }
-                }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     variant="contained"
                     onClick={() => handleJoin(event.id)}
                     disabled={isJoined}
-                    fullWidth={isMobile}
                     sx={{
                       background: isJoined ? COLORS.accentBrown : COLORS.green,
-                      color: '#fff',
+                      color: '#000',
                       fontWeight: 600,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.875rem', sm: '0.9rem' },
-                      py: { xs: 1, sm: 1.25 },
-                      '&:hover': { background: isJoined ? COLORS.accentBrown : COLORS.accentBlue },
-                      '&:disabled': { background: COLORS.accentBrown, color: '#666' }
+                      flex: 1,
+                      '&:disabled': { color: '#666' }
                     }}
                   >
                     {isJoined ? '✅ Joined' : 'Join'}
@@ -282,17 +248,12 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
                     variant="contained"
                     onClick={() => handleVote(event.id)}
                     disabled={hasVoted}
-                    fullWidth={isMobile}
                     sx={{
                       background: hasVoted ? COLORS.accentBrown : COLORS.yellow,
-                      color: hasVoted ? '#666' : COLORS.black,
+                      color: '#000',
                       fontWeight: 600,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.875rem', sm: '0.9rem' },
-                      py: { xs: 1, sm: 1.25 },
-                      '&:hover': { background: hasVoted ? COLORS.accentBrown : COLORS.accentBrown },
-                      '&:disabled': { background: COLORS.accentBrown, color: '#666' }
+                      flex: 1,
+                      '&:disabled': { color: '#666' }
                     }}
                   >
                     {hasVoted ? '✅ Voted' : 'Vote'}
@@ -307,4 +268,4 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
   );
 };
 
-export default GamificationEvents; 
+export default GamificationEvents;

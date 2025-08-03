@@ -32,11 +32,9 @@ const CarbonFootprintCalculator = () => {
   return (
     <Box
       sx={{
-        minHeight: '70vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: COLORS.background,
         py: 4,
         px: 3,
       }}
@@ -49,7 +47,7 @@ const CarbonFootprintCalculator = () => {
         p: 3 
       }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: COLORS.accentGreen, mb: 4, textAlign: 'center', letterSpacing: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: COLORS.green, mb: 4, textAlign: 'center', letterSpacing: 0.5 }}>
             Carbon Footprint Calculator
           </Typography>
           
@@ -124,7 +122,7 @@ const CarbonFootprintCalculator = () => {
               target="_blank" 
               rel="noopener noreferrer" 
               style={{ 
-                color: COLORS.accentBlue, 
+                color: COLORS.green, 
                 textDecoration: 'underline', 
                 fontWeight: 600,
                 fontSize: '11px'

@@ -35,34 +35,8 @@ const navLinks = [
   { label: 'Home', href: '#home' },
   { label: 'Our Work', href: '#work' },
   { label: 'Contact Us', href: '#contact' },
-  {
-    label: 'Login',
-    dropdown: [
-      { label: 'As a Company', href: '#login-company' },
-      { label: 'As an Individual', href: '#login-individual' },
-      { label: 'As an NGO', href: '#login-ngo' },
-      { label: 'As a Team Member', href: '#login-team' },
-    ],
-  },
-  {
-    label: 'Signup',
-    dropdown: [
-      { label: 'As a Company', href: '#signup-company' },
-      { label: 'As an Individual', href: '#signup-individual' },
-      { label: 'As an NGO', href: '#signup-ngo' },
-      { label: 'As a Team Member', href: '#signup-team' },
-    ],
-  },
-  { label: 'Donate', href: '#donate' },
-  {
-    label: 'Get Involved',
-    dropdown: [
-      { label: 'As a Company', href: '#get-involved-company' },
-      { label: 'As an Individual', href: '#get-involved-individual' },
-      { label: 'As an NGO', href: '#get-involved-ngo' },
-      { label: 'As a Team Member', href: '#get-involved-team' },
-    ],
-  },
+  { label: 'Login', href: '#login', isLogin: true },
+  { label: 'Donate', href: '#donate', isDonate: true },
 ];
 
 const socialLinks = [
@@ -78,7 +52,7 @@ const beachIcons = [
   '🐚', // Shell
 ];
 
-const Layout = ({ children, user }) => {
+const Layout = ({ children, user, onLoginClick }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [dropdownIdx, setDropdownIdx] = useState(null);
@@ -105,7 +79,44 @@ const Layout = ({ children, user }) => {
     }
   };
 
-  const handleNavClick = (href) => {
+  const handleDonate = () => {
+    const options = {
+      key: 'rzp_test_2H1mgrAxKxQXra', // Replace with your Razorpay key
+      amount: 50000, // Amount in paise (50000 = ₹500)
+      currency: "INR",
+      name: "CleanWave Donation",
+      description: "Support our mission!",
+      handler: function (response) {
+        alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
+        // Optionally, send this payment ID to your backend for verification
+      },
+      prefill: {
+        name: "",
+        email: "",
+        contact: "",
+      },
+      notes: {
+        purpose: "Donation",
+      },
+      theme: {
+        color: "#43a047",
+      },
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
+  const handleNavClick = (href, isDonate = false, isLogin = false) => {
+    if (isDonate) {
+      handleDonate();
+      return;
+    }
+    
+    if (isLogin && onLoginClick) {
+      onLoginClick();
+      return;
+    }
+    
     if (href.startsWith('#')) {
       scrollToSection(href.substring(1));
     } else if (href.startsWith('/')) {
@@ -283,7 +294,7 @@ const Layout = ({ children, user }) => {
                 <Button
                   key={link.label}
                   href={link.href}
-                  onClick={() => handleNavClick(link.href)}
+                  onClick={() => handleNavClick(link.href, link.isDonate, link.isLogin)}
                   sx={{
                     color: '#333',
                     fontWeight: 500,
@@ -292,8 +303,9 @@ const Layout = ({ children, user }) => {
                     px: { lg: 1.5, xl: 2 },
                     fontSize: { lg: '0.875rem', xl: '1rem' },
                     position: 'relative',
+                    background: link.isDonate ? COLORS.accentGreen : 'transparent',
                     '&:hover': {
-                      background: COLORS.accentGreen,
+                      background: link.isDonate ? COLORS.accentBlue : COLORS.accentGreen,
                       color: '#222',
                     },
                     '&:after': {
@@ -358,8 +370,7 @@ const Layout = ({ children, user }) => {
               Home
             </Button>
             <Button
-              href="#donate"
-              onClick={() => handleNavClick('#donate')}
+              onClick={() => handleDonate()}
               sx={{
                 color: '#333',
                 fontWeight: 500,
@@ -367,8 +378,9 @@ const Layout = ({ children, user }) => {
                 textTransform: 'none',
                 px: 2,
                 fontSize: '0.875rem',
+                background: COLORS.accentGreen,
                 '&:hover': {
-                  background: COLORS.accentGreen,
+                  background: COLORS.accentBlue,
                   color: '#222',
                 },
               }}
@@ -459,7 +471,11 @@ const Layout = ({ children, user }) => {
                         href={link.href} 
                         onClick={() => {
                           setDrawerOpen(false);
-                          handleNavClick(link.href);
+                          if (link.isDonate) {
+                            handleDonate();
+                          } else {
+                            handleNavClick(link.href);
+                          }
                         }}
                       >
                         <ListItemText 

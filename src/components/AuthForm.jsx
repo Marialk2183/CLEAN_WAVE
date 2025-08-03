@@ -54,8 +54,8 @@ const navLinks = [
   },
 ];
 
-const AuthForm = ({ onAuth }) => {
-  const [mode, setMode] = useState("login");
+const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
+  const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -204,41 +204,108 @@ const AuthForm = ({ onAuth }) => {
       }}
     >
       <Card sx={{
-        maxWidth: 600,
+        maxWidth: 800,
         width: '100%',
-        borderRadius: 6,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        background: COLORS.card,
-        p: 0,
+        borderRadius: 4,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+        border: '1px solid rgba(168, 230, 207, 0.2)',
+        overflow: 'hidden',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #A8E6CF, #B3E5FC, #D7CCC8)',
+        }
       }}>
-        <CardContent sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: COLORS.accentGreen, mb: 3, textAlign: 'center', letterSpacing: 1 }}>
-            {mode === 'login' ? 'Login' : mode === 'volunteer' ? 'Volunteer Login' : mode === 'ngo' ? 'NGO Login' : mode === 'volunteer-signup' ? 'Volunteer Signup' : mode === 'ngo-signup' ? 'NGO Signup' : 'Admin Login'}
-          </Typography>
+        <CardContent sx={{ 
+          p: { xs: 4, sm: 5 }, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          position: 'relative'
+        }}>
+          <Box sx={{ 
+            mb: 3, 
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 700, 
+              color: COLORS.black, 
+              mb: 1, 
+              textAlign: 'center', 
+              letterSpacing: 0.5,
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+            }}>
+              {mode === 'login' ? 'Welcome Back' : 
+               mode === 'volunteer' ? 'Volunteer Login' : 
+               mode === 'ngo' ? 'NGO Login' : 
+               mode === 'volunteer-signup' ? 'Join as Volunteer' : 
+               mode === 'ngo-signup' ? 'Join as NGO' : 
+               mode === 'admin' ? 'Admin Access' : 'Welcome Back'}
+            </Typography>
+            <Typography variant="body2" sx={{ 
+              color: '#666', 
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>
+              {mode === 'login' ? 'Sign in to your account' : 
+               mode === 'volunteer' ? 'Access volunteer features' : 
+               mode === 'ngo' ? 'Access NGO dashboard' : 
+               mode === 'volunteer-signup' ? 'Start making a difference' : 
+               mode === 'ngo-signup' ? 'Partner with us' : 
+               mode === 'admin' ? 'Access admin panel' : 'Sign in to your account'}
+            </Typography>
+          </Box>
           <Tabs
             value={tabIndex}
-            onChange={(_, idx) => setMode(idx === 0 ? 'login' : idx === 1 ? 'volunteer' : idx === 2 ? 'ngo' : idx === 3 ? 'volunteer-signup' : idx === 4 ? 'ngo-signup' : idx === 5 ? 'admin' : 'login')}
+            onChange={(_, idx) => {
+              const newMode = idx === 0 ? 'login' : idx === 1 ? 'volunteer' : idx === 2 ? 'ngo' : idx === 3 ? 'volunteer-signup' : idx === 4 ? 'ngo-signup' : idx === 5 ? 'admin' : 'login';
+              setMode(newMode);
+              if (onModeChange) {
+                onModeChange(newMode);
+              }
+            }}
             variant="fullWidth"
             sx={{
               mb: 4,
-              minHeight: 40,
-              borderRadius: 3,
-              background: COLORS.background,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              borderBottom: `2px solid ${COLORS.accentBrown}`,
+              minHeight: 48,
+              borderRadius: 2,
+              background: 'rgba(168, 230, 207, 0.1)',
+              '& .MuiTabs-scroller': {
+                borderRadius: 2,
+              },
               '.MuiTabs-indicator': {
                 backgroundColor: COLORS.accentGreen,
-                height: 4,
-                borderRadius: 2,
+                height: 3,
+                borderRadius: 1.5,
+              },
+              '.MuiTab-root': {
+                minHeight: 40,
+                fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
+                fontWeight: 600,
+                color: '#666',
+                textTransform: 'none',
+                padding: { xs: '6px 8px', sm: '8px 12px' },
+                '&.Mui-selected': {
+                  color: COLORS.accentGreen,
+                  fontWeight: 700,
+                },
               },
             }}
           >
-            <Tab label="Login" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
-            <Tab label="Volunteer" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
-            <Tab label="NGO" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
-            <Tab label="Volunteer Signup" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
-            <Tab label="NGO Signup" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
-            <Tab label="Admin" sx={{ fontWeight: 600, color: COLORS.accentBrown, minHeight: 40, fontSize: 16 }} />
+            <Tab label="Login" />
+            <Tab label="Volunteer" />
+            <Tab label="NGO" />
+            <Tab label="Volunteer Signup" />
+            <Tab label="NGO Signup" />
+            <Tab label="Admin" />
           </Tabs>
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
             <TextField
@@ -247,12 +314,29 @@ const AuthForm = ({ onAuth }) => {
               type="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="Enter email"
+              placeholder="Enter your email"
               required
               fullWidth
               variant="outlined"
-              sx={{ borderRadius: 3, background: COLORS.background, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-              InputLabelProps={{ style: { color: COLORS.accentBrown } }}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  background: '#fff',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: COLORS.accentGreen,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: COLORS.accentGreen,
+                    borderWidth: 2,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#666',
+                  '&.Mui-focused': {
+                    color: COLORS.accentGreen,
+                  },
+                },
+              }}
             />
             <TextField
               label="Password"
@@ -260,12 +344,29 @@ const AuthForm = ({ onAuth }) => {
               type="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Password"
+              placeholder="Enter your password"
               required
               fullWidth
               variant="outlined"
-              sx={{ borderRadius: 3, background: COLORS.background, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-              InputLabelProps={{ style: { color: COLORS.accentBrown } }}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  background: '#fff',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: COLORS.accentGreen,
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: COLORS.accentGreen,
+                    borderWidth: 2,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#666',
+                  '&.Mui-focused': {
+                    color: COLORS.accentGreen,
+                  },
+                },
+              }}
             />
             {(mode === "volunteer-signup" || mode === "ngo-signup") && (
               <TextField
@@ -274,12 +375,29 @@ const AuthForm = ({ onAuth }) => {
                 type="password"
                 value={form.confirm}
                 onChange={handleChange}
-                placeholder="Confirm Password"
+                placeholder="Confirm your password"
                 required
                 fullWidth
                 variant="outlined"
-                sx={{ borderRadius: 3, background: COLORS.background, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                InputLabelProps={{ style: { color: COLORS.accentBrown } }}
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    borderRadius: 2,
+                    background: '#fff',
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: COLORS.accentGreen,
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: COLORS.accentGreen,
+                      borderWidth: 2,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#666',
+                    '&.Mui-focused': {
+                      color: COLORS.accentGreen,
+                    },
+                  },
+                }}
               />
             )}
             <Button
@@ -287,33 +405,59 @@ const AuthForm = ({ onAuth }) => {
               fullWidth
               variant="contained"
               sx={{
-                borderRadius: 3,
-                fontSize: 18,
+                borderRadius: 2,
+                fontSize: { xs: '1rem', sm: '1.1rem' },
                 fontWeight: 700,
-                py: 2,
+                py: 2.5,
                 px: 4,
-                background: mode === "admin" ? '#E4405F' : mode === "volunteer" ? '#4CAF50' : mode === "ngo" ? '#FF9800' : mode === "volunteer-signup" ? '#4CAF50' : mode === "ngo-signup" ? '#FF9800' : COLORS.accentGreen,
+                background: `linear-gradient(135deg, ${mode === "admin" ? '#E4405F' : mode === "volunteer" ? '#4CAF50' : mode === "ngo" ? '#FF9800' : mode === "volunteer-signup" ? '#4CAF50' : mode === "ngo-signup" ? '#FF9800' : COLORS.accentGreen} 0%, ${mode === "admin" ? '#C13584' : mode === "volunteer" ? '#388E3C' : mode === "ngo" ? '#F57C00' : mode === "volunteer-signup" ? '#388E3C' : mode === "ngo-signup" ? '#F57C00' : COLORS.accentBlue} 100%)`,
                 color: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 textTransform: 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  background: mode === "admin" ? '#C13584' : mode === "volunteer" ? '#388E3C' : mode === "ngo" ? '#F57C00' : mode === "volunteer-signup" ? '#388E3C' : mode === "ngo-signup" ? '#F57C00' : COLORS.accentBlue,
-                  color: '#fff',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
                 },
                 mb: 2,
                 mt: 2,
               }}
             >
-              {mode === "login" ? "Login" : mode === "volunteer" ? "Login as Volunteer" : mode === "ngo" ? "Login as NGO" : mode === "volunteer-signup" ? "Signup as Volunteer" : mode === "ngo-signup" ? "Signup as NGO" : "Login as Admin"}
+              {mode === "login" ? "Sign In" : mode === "volunteer" ? "Login as Volunteer" : mode === "ngo" ? "Login as NGO" : mode === "volunteer-signup" ? "Join as Volunteer" : mode === "ngo-signup" ? "Join as NGO" : "Access Admin Panel"}
             </Button>
           </Box>
           {error && (
-            <Alert severity="error" sx={{ mt: 3, borderRadius: 3, fontSize: 16, border: `1.5px solid ${COLORS.accentGreen}`, background: COLORS.background, color: '#b26a00', fontWeight: 600 }} onClose={() => setError("")}>
+            <Alert severity="error" sx={{ 
+              mt: 3, 
+              borderRadius: 2, 
+              fontSize: '0.9rem', 
+              border: '1px solid #ffcdd2', 
+              background: '#ffebee', 
+              color: '#c62828', 
+              fontWeight: 600,
+              '& .MuiAlert-icon': {
+                color: '#c62828',
+              }
+            }} onClose={() => setError("")}>
               {error}
             </Alert>
           )}
           {info && (
-            <Alert severity="info" sx={{ mt: 3, borderRadius: 3, fontSize: 16, border: `1.5px solid ${COLORS.accentBlue}`, background: COLORS.background, color: '#0083b0', fontWeight: 600 }} onClose={() => setInfo("")}>
+            <Alert severity="info" sx={{ 
+              mt: 3, 
+              borderRadius: 2, 
+              fontSize: '0.9rem', 
+              border: '1px solid #bbdefb', 
+              background: '#e3f2fd', 
+              color: '#1565c0', 
+              fontWeight: 600,
+              '& .MuiAlert-icon': {
+                color: '#1565c0',
+              }
+            }} onClose={() => setInfo("")}>
               {info}
             </Alert>
           )}

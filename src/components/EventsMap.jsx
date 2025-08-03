@@ -59,11 +59,9 @@ const EventsMap = () => {
   return (
     <Box
       sx={{
-        minHeight: '70vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: COLORS.background,
         py: 4,
         px: 3,
       }}

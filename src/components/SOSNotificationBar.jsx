@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Slide from '@mui/material/Slide';
@@ -82,9 +82,12 @@ const SOSNotificationBar = () => {
         >
           🚨 SOS: {latestSOS.sender || latestSOS.user} needs help!
           {locationName && (
-            <> (Location: {locationName})</>
+            <> (📍 {locationName})</>
           )}
-          {/* Show 'I'm Saved' button only to the sender */}
+          {!locationName && latestSOS.location && (
+            <> (📍 {latestSOS.location.lat.toFixed(4)}, {latestSOS.location.lng.toFixed(4)})</>
+          )}
+          {/* Show 'I'm Saved' button to the sender */}
           {user && (user.email === (latestSOS.sender || latestSOS.user)) && (
             <Button
               variant="contained"
@@ -100,12 +103,29 @@ const SOSNotificationBar = () => {
               I'm Saved
             </Button>
           )}
-          {/* Debug info - remove this later */}
-          <Box sx={{ fontSize: '12px', mt: 1, color: '#666' }}>
-            Debug: User: {user?.email}, Sender: {latestSOS.sender || latestSOS.user}
-            <br />
-            Match: {user?.email === (latestSOS.sender || latestSOS.user) ? 'YES' : 'NO'}
-          </Box>
+          
+          {/* Show 'Mark as Helped' button to all other members */}
+          {user && (user.email !== (latestSOS.sender || latestSOS.user)) && (
+            <Button
+              variant="contained"
+              size="small"
+              sx={{ ml: 2, background: '#4CAF50', color: '#fff', fontWeight: 600 }}
+              onClick={async () => {
+                setVisible(false);
+                // Mark as resolved in Firestore for all members
+                const sosRef = doc(db, 'sos_alerts', 'latest');
+                await updateDoc(sosRef, { 
+                  resolved: true, 
+                  status: 'resolved',
+                  helpedBy: user.email,
+                  helpedAt: serverTimestamp()
+                });
+              }}
+            >
+              Mark as Helped
+            </Button>
+          )}
+
         </Alert>
       </Box>
     </Slide>

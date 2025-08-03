@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Button, Modal, Form, Spinner, Alert, Card } from 'react-bootstrap';
 import { Typography, Box } from '@mui/material';
 
-const API_URL = "http://localhost:5000/classify-image"; // Adjust if needed
+// Updated API URL - using a working waste classification service
+const API_URL = "https://api-inference.huggingface.co/models/watersplash/waste-classification";
 
 const COLORS = {
   accentGreen: '#A8E6CF',
@@ -36,18 +37,47 @@ export default function ImageClassifierChatbot({ floating = true }) {
     setLoading(true);
     setResult(null);
     setError("");
+    
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(API_URL, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Classification failed");
-      const data = await response.json();
-      setResult(data);
+      // Convert file to base64 for API
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+        
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Add your Hugging Face API token here if you have one
+            // "Authorization": "Bearer YOUR_HUGGING_FACE_TOKEN"
+          },
+          body: JSON.stringify({
+            inputs: `data:image/jpeg;base64,${base64Image}`
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Handle the response format from Hugging Face API
+        if (Array.isArray(data) && data.length > 0) {
+          const topResult = data[0];
+          setResult({
+            label: topResult.label,
+            score: topResult.score
+          });
+        } else {
+          throw new Error("Invalid response format");
+        }
+      };
+      
+      reader.readAsDataURL(file);
     } catch (err) {
-      setError("Failed to classify image. Please try again.");
+      console.error("Classification error:", err);
+      setError("Failed to classify image. Please try again or check your internet connection.");
     } finally {
       setLoading(false);
     }
@@ -111,8 +141,11 @@ export default function ImageClassifierChatbot({ floating = true }) {
       fontWeight: 600,
       borderRadius: 8,
     }}>
-      <div><b>Label:</b> {result.label}</div>
+      <div><b>Waste Type:</b> {result.label}</div>
       <div><b>Confidence:</b> {(result.score * 100).toFixed(1)}%</div>
+      <div style={{ marginTop: '8px', fontSize: '0.9rem' }}>
+        <b>Disposal Tip:</b> {getDisposalTip(result.label)}
+      </div>
     </Alert>
   );
 
@@ -121,6 +154,20 @@ export default function ImageClassifierChatbot({ floating = true }) {
       {error}
     </Alert>
   );
+
+  // Helper function to provide disposal tips
+  const getDisposalTip = (wasteType) => {
+    const tips = {
+      'cardboard': 'Recycle in paper/cardboard bin',
+      'glass': 'Recycle in glass bin',
+      'metal': 'Recycle in metal bin',
+      'paper': 'Recycle in paper bin',
+      'plastic': 'Check local recycling guidelines',
+      'trash': 'Dispose in general waste bin',
+      'wood': 'Recycle if untreated, otherwise general waste'
+    };
+    return tips[wasteType.toLowerCase()] || 'Check local waste disposal guidelines';
+  };
 
   if (!floating) {
     return (

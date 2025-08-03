@@ -18,6 +18,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const COLORS = {
   accentGreen: '#A8E6CF',
@@ -81,6 +82,9 @@ const Layout = ({ children, user }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [dropdownIdx, setDropdownIdx] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleDropdownOpen = (event, idx) => {
     setAnchorEl(event.currentTarget);
@@ -159,23 +163,35 @@ const Layout = ({ children, user }) => {
           boxShadow: '0 4px 16px 0 rgba(0,0,0,0.06)',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', minHeight: 64 }}>
+        <Toolbar sx={{ 
+          justifyContent: 'space-between', 
+          minHeight: { xs: 56, sm: 64 },
+          px: { xs: 1, sm: 2, md: 3 }
+        }}>
           {/* Logo + App Name */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ fontSize: 32, mr: 1 }}>🌴</Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.black, letterSpacing: 1 }}>
+            <Box sx={{ fontSize: { xs: 24, sm: 28, md: 32 }, mr: 1 }}>🌴</Box>
+            <Typography 
+              variant={isMobile ? "h6" : "h6"} 
+              sx={{ 
+                fontWeight: 700, 
+                color: COLORS.black, 
+                letterSpacing: 1,
+                fontSize: { xs: '1rem', sm: '1.25rem' }
+              }}
+            >
               CleanWave 🌊
             </Typography>
             {user?.isAdmin && (
               <Box sx={{ 
                 background: '#E4405F', 
                 color: '#fff', 
-                px: 1.5, 
-                py: 0.5, 
+                px: { xs: 1, sm: 1.5 }, 
+                py: { xs: 0.25, sm: 0.5 }, 
                 borderRadius: 2, 
-                fontSize: '12px', 
+                fontSize: { xs: '10px', sm: '12px' }, 
                 fontWeight: 700,
-                ml: 1
+                ml: { xs: 0.5, sm: 1 }
               }}>
                 👑 ADMIN
               </Box>
@@ -184,12 +200,12 @@ const Layout = ({ children, user }) => {
               <Box sx={{ 
                 background: '#4CAF50', 
                 color: '#fff', 
-                px: 1.5, 
-                py: 0.5, 
+                px: { xs: 1, sm: 1.5 }, 
+                py: { xs: 0.25, sm: 0.5 }, 
                 borderRadius: 2, 
-                fontSize: '12px', 
+                fontSize: { xs: '10px', sm: '12px' }, 
                 fontWeight: 700,
-                ml: 1
+                ml: { xs: 0.5, sm: 1 }
               }}>
                 🤝 VOLUNTEER
               </Box>
@@ -198,19 +214,19 @@ const Layout = ({ children, user }) => {
               <Box sx={{ 
                 background: '#FF9800', 
                 color: '#fff', 
-                px: 1.5, 
-                py: 0.5, 
+                px: { xs: 1, sm: 1.5 }, 
+                py: { xs: 0.25, sm: 0.5 }, 
                 borderRadius: 2, 
-                fontSize: '12px', 
+                fontSize: { xs: '10px', sm: '12px' }, 
                 fontWeight: 700,
-                ml: 1
+                ml: { xs: 0.5, sm: 1 }
               }}>
                 🏢 NGO
               </Box>
             )}
           </Box>
           {/* Desktop Nav */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexWrap: 'wrap' }}>
+          <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1, flexWrap: 'wrap' }}>
             {navLinks.map((link, idx) =>
               link.dropdown ? (
                 <Box key={link.label} sx={{ position: 'relative' }}>
@@ -222,7 +238,8 @@ const Layout = ({ children, user }) => {
                       fontWeight: 500,
                       borderRadius: 2,
                       textTransform: 'none',
-                      px: 2,
+                      px: { lg: 1.5, xl: 2 },
+                      fontSize: { lg: '0.875rem', xl: '1rem' },
                       position: 'relative',
                       '&:hover': {
                         background: COLORS.accentGreen,
@@ -272,7 +289,8 @@ const Layout = ({ children, user }) => {
                     fontWeight: 500,
                     borderRadius: 2,
                     textTransform: 'none',
-                    px: 2,
+                    px: { lg: 1.5, xl: 2 },
+                    fontSize: { lg: '0.875rem', xl: '1rem' },
                     position: 'relative',
                     '&:hover': {
                       background: COLORS.accentGreen,
@@ -306,7 +324,67 @@ const Layout = ({ children, user }) => {
                   fontWeight: 600,
                   borderRadius: 2,
                   textTransform: 'none',
+                  px: { lg: 1.5, xl: 2 },
+                  fontSize: { lg: '0.875rem', xl: '1rem' },
+                  border: '1px solid #E4405F',
+                  '&:hover': {
+                    background: '#E4405F',
+                    color: '#fff',
+                  },
+                }}
+              >
+                Logout
+              </Button>
+            )}
+          </Box>
+          {/* Tablet Nav - Simplified */}
+          <Box sx={{ display: { xs: 'none', md: 'flex', lg: 'none' }, gap: 1 }}>
+            <Button
+              href="#home"
+              onClick={() => handleNavClick('#home')}
+              sx={{
+                color: '#333',
+                fontWeight: 500,
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 2,
+                fontSize: '0.875rem',
+                '&:hover': {
+                  background: COLORS.accentGreen,
+                  color: '#222',
+                },
+              }}
+            >
+              Home
+            </Button>
+            <Button
+              href="#donate"
+              onClick={() => handleNavClick('#donate')}
+              sx={{
+                color: '#333',
+                fontWeight: 500,
+                borderRadius: 2,
+                textTransform: 'none',
+                px: 2,
+                fontSize: '0.875rem',
+                '&:hover': {
+                  background: COLORS.accentGreen,
+                  color: '#222',
+                },
+              }}
+            >
+              Donate
+            </Button>
+            {user && (
+              <Button
+                onClick={() => window.location.reload()}
+                sx={{
+                  color: '#E4405F',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  textTransform: 'none',
                   px: 2,
+                  fontSize: '0.875rem',
                   border: '1px solid #E4405F',
                   '&:hover': {
                     background: '#E4405F',
@@ -323,35 +401,99 @@ const Layout = ({ children, user }) => {
             <IconButton onClick={() => setDrawerOpen(true)}>
               <MenuIcon sx={{ color: COLORS.accentBrown }} />
             </IconButton>
-            <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-              <List sx={{ width: 260 }}>
+            <Drawer 
+              anchor="right" 
+              open={drawerOpen} 
+              onClose={() => setDrawerOpen(false)}
+              sx={{
+                '& .MuiDrawer-paper': {
+                  width: { xs: '280px', sm: '320px' },
+                  pt: 2
+                }
+              }}
+            >
+              <List sx={{ width: '100%' }}>
                 {navLinks.map((link) =>
                   link.dropdown ? (
                     <Box key={link.label}>
                       <ListItem disablePadding>
-                        <ListItemText primary={link.label} sx={{ pl: 2, fontWeight: 700, color: COLORS.accentBrown }} />
+                        <ListItemText 
+                          primary={link.label} 
+                          sx={{ 
+                            pl: 2, 
+                            fontWeight: 700, 
+                            color: COLORS.accentBrown,
+                            '& .MuiTypography-root': {
+                              fontSize: '1rem'
+                            }
+                          }} 
+                        />
                       </ListItem>
                       {link.dropdown.map((item) => (
                         <ListItem key={item.label} disablePadding>
-                          <ListItemButton component="a" href={item.href} onClick={() => {
-                            setDrawerOpen(false);
-                            handleNavClick(item.href);
-                          }} sx={{ pl: 4 }}>
-                            <ListItemText primary={item.label} />
+                          <ListItemButton 
+                            component="a" 
+                            href={item.href} 
+                            onClick={() => {
+                              setDrawerOpen(false);
+                              handleNavClick(item.href);
+                            }} 
+                            sx={{ pl: 4 }}
+                          >
+                            <ListItemText 
+                              primary={item.label}
+                              sx={{
+                                '& .MuiTypography-root': {
+                                  fontSize: '0.9rem'
+                                }
+                              }}
+                            />
                           </ListItemButton>
                         </ListItem>
                       ))}
                     </Box>
                   ) : (
                     <ListItem key={link.label} disablePadding>
-                      <ListItemButton component="a" href={link.href} onClick={() => {
-                        setDrawerOpen(false);
-                        handleNavClick(link.href);
-                      }}>
-                        <ListItemText primary={link.label} />
+                      <ListItemButton 
+                        component="a" 
+                        href={link.href} 
+                        onClick={() => {
+                          setDrawerOpen(false);
+                          handleNavClick(link.href);
+                        }}
+                      >
+                        <ListItemText 
+                          primary={link.label}
+                          sx={{
+                            '& .MuiTypography-root': {
+                              fontSize: '1rem'
+                            }
+                          }}
+                        />
                       </ListItemButton>
                     </ListItem>
                   )
+                )}
+                {user && (
+                  <ListItem disablePadding>
+                    <ListItemButton 
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        window.location.reload();
+                      }}
+                      sx={{ color: '#E4405F' }}
+                    >
+                      <ListItemText 
+                        primary="Logout"
+                        sx={{
+                          '& .MuiTypography-root': {
+                            fontSize: '1rem',
+                            fontWeight: 600
+                          }
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
                 )}
               </List>
             </Drawer>
@@ -360,23 +502,32 @@ const Layout = ({ children, user }) => {
       </AppBar>
       {/* Main Content */}
       <Toolbar /> {/* Spacer for fixed AppBar */}
-      <Container maxWidth="md" sx={{ py: 5, px: 0 }}>
+      <Container maxWidth="md" sx={{ 
+        py: { xs: 3, sm: 4, md: 5 }, 
+        px: { xs: 1, sm: 2, md: 3 } 
+      }}>
         {children}
       </Container>
-      {/* Footer (unchanged) */}
+      {/* Footer */}
       <Box
         component="footer"
         id="contact"
         sx={{
           background: 'linear-gradient(135deg, #A8E6CF 0%, #B3E5FC 50%, #D7CCC8 100%)',
           borderTop: `2px solid ${COLORS.accentBlue}`,
-          py: 4,
+          py: { xs: 3, sm: 4 },
           boxShadow: '0 -2px 12px 0 rgba(0,0,0,0.04)',
         }}
       >
-        <Container maxWidth="md">
-          {/* Remove the beach icons from the footer. Only keep social links and the rest. */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 3 }}>
+        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
+          {/* Social Links */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 2, 
+            mb: { xs: 2, sm: 3 } 
+          }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {socialLinks.map(link => (
                 <IconButton
@@ -387,7 +538,7 @@ const Layout = ({ children, user }) => {
                   sx={{ 
                     background: COLORS.card, 
                     borderRadius: '50%', 
-                    p: 1, 
+                    p: { xs: 1, sm: 1.5 }, 
                     mx: 0.5, 
                     '&:hover': { 
                       background: link.label === 'Instagram' ? '#E4405F' : 
@@ -397,7 +548,8 @@ const Layout = ({ children, user }) => {
                     '& .MuiSvgIcon-root': {
                       color: link.label === 'Instagram' ? '#E4405F' : 
                              link.label === 'Twitter' ? '#1DA1F2' : 
-                             link.label === 'Facebook' ? '#1877F2' : COLORS.accentBrown
+                             link.label === 'Facebook' ? '#1877F2' : COLORS.accentBrown,
+                      fontSize: { xs: '1.25rem', sm: '1.5rem' }
                     },
                     '&:hover .MuiSvgIcon-root': {
                       color: '#fff'
@@ -410,45 +562,89 @@ const Layout = ({ children, user }) => {
               ))}
             </Box>
           </Box>
-          {/* Contact Us and Partners, two columns on desktop, stacked on mobile */}
+          {/* Contact Us and Partners */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               justifyContent: 'space-between',
               alignItems: { xs: 'flex-start', md: 'center' },
-              gap: 4,
+              gap: { xs: 3, md: 4 },
               mb: 2,
             }}
           >
             {/* Contact Us */}
-            <Box sx={{ flex: 1, minWidth: 220 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: COLORS.black, mb: 1 }}>
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 220 } }}>
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: COLORS.black, 
+                  mb: 1,
+                  fontSize: { xs: '1rem', sm: '1.125rem' }
+                }}
+              >
                 Contact Us
               </Typography>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 0.5,
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                }}
+              >
                 NMIMS Mumbai, 4th Floor, Mumbai Educational Trust, VileParle (West), Mumbai 400 049
               </Typography>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 0.5,
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                }}
+              >
                 Tel: +91 9999999999
               </Typography>
-              <Typography variant="body2">
+              <Typography 
+                variant="body2"
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+              >
                 Email: <a href="mailto:star3mared@gmail.com" style={{ color: COLORS.black, textDecoration: 'underline' }}>star3mared@gmail.com</a>
               </Typography>
             </Box>
             {/* Partners */}
-            <Box sx={{ flex: 1, minWidth: 220, textAlign: { xs: 'left', md: 'right' } }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, color: COLORS.black, mb: 1 }}>
+            <Box sx={{ 
+              flex: 1, 
+              minWidth: { xs: '100%', md: 220 }, 
+              textAlign: { xs: 'left', md: 'right' } 
+            }}>
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: COLORS.black, 
+                  mb: 1,
+                  fontSize: { xs: '1rem', sm: '1.125rem' }
+                }}
+              >
                 Partners
               </Typography>
-              <Typography variant="body2">
+              <Typography 
+                variant="body2"
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+              >
                 Mumbai ,Maharashtra
               </Typography>
             </Box>
           </Box>
-          {/* Copyright centered below */}
+          {/* Copyright */}
           <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Typography variant="caption" sx={{ color: 'black' }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: 'black',
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
+            >
               © 2025 CleanWave / United Way Mumbai
             </Typography>
           </Box>

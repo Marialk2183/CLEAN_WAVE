@@ -5,6 +5,7 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
@@ -44,6 +45,9 @@ const events = [
 
 const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
   const [eventStats, setEventStats] = useState({});
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const fetchEventStats = async () => {
@@ -137,56 +141,137 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
     <Box
       sx={{
         background: COLORS.background,
-        py: 4,
+        py: { xs: 2, sm: 3, md: 4 },
+        px: { xs: 1, sm: 2, md: 3 },
         width: '100%',
         maxWidth: 1200,
         mx: 'auto'
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, justifyContent: 'center' }}>
+      <Box 
+        sx={{ 
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(auto-fit, minmax(280px, 1fr))',
+            md: 'repeat(auto-fit, minmax(320px, 1fr))',
+            lg: 'repeat(3, 1fr)'
+          },
+          gap: { xs: 2, sm: 3, md: 4 },
+          justifyContent: 'center',
+          alignItems: 'stretch'
+        }}
+      >
         {events.map(event => {
           const stats = eventStats[`event_${event.id}`] || { joins: 0, votes: 0 };
           const isJoined = joined.includes(event.id);
           const hasVoted = voted.includes(event.id);
           
           return (
-            <Card key={event.id} sx={{ maxWidth: 350, borderRadius: 4, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', background: COLORS.card, p: 1 }}>
+            <Card 
+              key={event.id} 
+              sx={{ 
+                width: '100%',
+                maxWidth: { xs: '100%', sm: 400, md: 350 },
+                borderRadius: { xs: 2, sm: 3, md: 4 }, 
+                boxShadow: '0 4px 24px rgba(0,0,0,0.08)', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                background: COLORS.card, 
+                p: { xs: 0.5, sm: 1 },
+                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+                }
+              }}
+            >
               <CardMedia
                 component="img"
-                height="180"
+                height={isMobile ? "140" : "180"}
                 image={event.image}
                 alt={event.name}
-                sx={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                sx={{ 
+                  borderTopLeftRadius: { xs: 8, sm: 12 }, 
+                  borderTopRightRadius: { xs: 8, sm: 12 },
+                  objectFit: 'cover'
+                }}
               />
-              <CardContent sx={{ flex: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.green, mb: 1 }}>
+              <CardContent sx={{ flex: 1, p: { xs: 1.5, sm: 2 } }}>
+                <Typography 
+                  variant={isMobile ? "h6" : "h6"} 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: COLORS.green, 
+                    mb: 1,
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                    lineHeight: 1.3
+                  }}
+                >
                   {event.name}
                 </Typography>
-                <Typography variant="body2" sx={{ color: COLORS.black, mb: 2 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: COLORS.black, 
+                    mb: 2,
+                    fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                    lineHeight: 1.5
+                  }}
+                >
                   {event.description}
                 </Typography>
                 
                 {/* Event Stats */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, p: 1, background: 'rgba(168, 230, 207, 0.1)', borderRadius: 1 }}>
-                  <Typography variant="caption" sx={{ color: COLORS.black, fontWeight: 600 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  mb: 2, 
+                  p: { xs: 0.75, sm: 1 }, 
+                  background: 'rgba(168, 230, 207, 0.1)', 
+                  borderRadius: 1 
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: COLORS.black, 
+                      fontWeight: 600,
+                      fontSize: { xs: '0.75rem', sm: '0.8rem' }
+                    }}
+                  >
                     👥 {stats.joins} Joined
                   </Typography>
-                  <Typography variant="caption" sx={{ color: COLORS.black, fontWeight: 600 }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: COLORS.black, 
+                      fontWeight: 600,
+                      fontSize: { xs: '0.75rem', sm: '0.8rem' }
+                    }}
+                  >
                     🗳️ {stats.votes} Votes
                   </Typography>
                 </Box>
                 
-                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: { xs: 1, sm: 2 }, 
+                  mt: 2,
+                  flexDirection: { xs: 'column', sm: 'row' }
+                }}>
                   <Button
                     variant="contained"
                     onClick={() => handleJoin(event.id)}
                     disabled={isJoined}
+                    fullWidth={isMobile}
                     sx={{
                       background: isJoined ? COLORS.accentBrown : COLORS.green,
                       color: '#fff',
                       fontWeight: 600,
                       borderRadius: 2,
                       textTransform: 'none',
+                      fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                      py: { xs: 1, sm: 1.25 },
                       '&:hover': { background: isJoined ? COLORS.accentBrown : COLORS.accentBlue },
                       '&:disabled': { background: COLORS.accentBrown, color: '#666' }
                     }}
@@ -197,12 +282,15 @@ const GamificationEvents = ({ user, joined, voted, onJoin, onVote }) => {
                     variant="contained"
                     onClick={() => handleVote(event.id)}
                     disabled={hasVoted}
+                    fullWidth={isMobile}
                     sx={{
                       background: hasVoted ? COLORS.accentBrown : COLORS.yellow,
                       color: hasVoted ? '#666' : COLORS.black,
                       fontWeight: 600,
                       borderRadius: 2,
                       textTransform: 'none',
+                      fontSize: { xs: '0.875rem', sm: '0.9rem' },
+                      py: { xs: 1, sm: 1.25 },
                       '&:hover': { background: hasVoted ? COLORS.accentBrown : COLORS.accentBrown },
                       '&:disabled': { background: COLORS.accentBrown, color: '#666' }
                     }}

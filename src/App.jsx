@@ -11,6 +11,7 @@ import GamificationEvents from "./components/GamificationEvents";
 import ImageClassifierChatbot from "./components/ImageClassifierChatbot";
 import { Card, Alert, Button, Row, Col, Container } from 'react-bootstrap';
 import Box from '@mui/material/Box';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { db } from './firebase';
 import { doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import Layout from "./components/Layout";
@@ -35,6 +36,15 @@ const theme = createTheme({
     fontFamily: 'Inter, Roboto, Arial, sans-serif',
     allVariants: {
       color: '#111',
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
     },
   },
 });
@@ -65,6 +75,9 @@ function App() {
   const [joinedGamification, setJoinedGamification] = useState([]);
   const [votedGamification, setVotedGamification] = useState([]);
   const [helpedMessage, setHelpedMessage] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleAuth = (email, password, mode) => {
     setUser({ email, isAdmin: mode === 'admin' });
@@ -128,17 +141,40 @@ function App() {
       <CssBaseline />
       <Layout user={user}>
         <HeroCarousel />
-        <Container className="flex-grow-1">
+        <Container className="flex-grow-1" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
           {user && sosAlert && (
-            <Alert variant="danger" className="text-center fw-bold fade-in-section visible" dismissible={false}>
+            <Alert 
+              variant="danger" 
+              className="text-center fw-bold fade-in-section visible" 
+              dismissible={false}
+              sx={{ 
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                py: { xs: 1, sm: 2 },
+                mb: { xs: 2, sm: 3 }
+              }}
+            >
               🚨 SOS Alert! {sosAlert.sender} needs help! ({new Date(sosAlert.time).toLocaleTimeString()})
-              <Button variant="success" className="ms-3" onClick={handleHelped}>
+              <Button 
+                variant="success" 
+                className="ms-3" 
+                onClick={handleHelped}
+                size={isMobile ? "sm" : "md"}
+              >
                 Mark as Helped
               </Button>
             </Alert>
           )}
           {helpedMessage && (
-            <Alert variant="success" className="text-center fw-bold fade-in-section visible" dismissible={false}>
+            <Alert 
+              variant="success" 
+              className="text-center fw-bold fade-in-section visible" 
+              dismissible={false}
+              sx={{ 
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                py: { xs: 1, sm: 2 },
+                mb: { xs: 2, sm: 3 }
+              }}
+            >
               {helpedMessage}
             </Alert>
           )}
@@ -146,60 +182,98 @@ function App() {
             <AuthForm onAuth={handleAuth} />
           )}
           {/* Impact Stats Section */}
-          <Row className="mb-4 text-center impact-animate">
-            <Col md={3} xs={6} className="mb-3">
-              <Card className="shadow-sm border-0 bg-success text-white">
-                <Card.Body>
-                  <div className="fs-2 fw-bold"><AnimatedNumber value={1240} /></div>
-                  <div>Bottles Collected</div>
+          <Row className="mb-4 text-center impact-animate" sx={{ mx: 0 }}>
+            <Col xs={6} sm={6} md={3} className="mb-3">
+              <Card className="shadow-sm border-0 bg-success text-white" sx={{ 
+                height: { xs: 'auto', sm: '120px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Card.Body sx={{ p: { xs: 1, sm: 2 } }}>
+                  <div className={`fw-bold ${isMobile ? 'fs-4' : 'fs-2'}`}>
+                    <AnimatedNumber value={1240} />
+                  </div>
+                  <div className={isMobile ? 'fs-6' : 'fs-5'}>Bottles Collected</div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={3} xs={6} className="mb-3">
-              <Card className="shadow-sm border-0 bg-info text-white">
-                <Card.Body>
-                  <div className="fs-2 fw-bold"><AnimatedNumber value={87} /></div>
-                  <div>Volunteers</div>
+            <Col xs={6} sm={6} md={3} className="mb-3">
+              <Card className="shadow-sm border-0 bg-info text-white" sx={{ 
+                height: { xs: 'auto', sm: '120px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Card.Body sx={{ p: { xs: 1, sm: 2 } }}>
+                  <div className={`fw-bold ${isMobile ? 'fs-4' : 'fs-2'}`}>
+                    <AnimatedNumber value={87} />
+                  </div>
+                  <div className={isMobile ? 'fs-6' : 'fs-5'}>Volunteers</div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={3} xs={6} className="mb-3">
-              <Card className="shadow-sm border-0 bg-primary text-white">
-                <Card.Body>
-                  <div className="fs-2 fw-bold"><AnimatedNumber value={15} /></div>
-                  <div>Events Hosted</div>
+            <Col xs={6} sm={6} md={3} className="mb-3">
+              <Card className="shadow-sm border-0 bg-primary text-white" sx={{ 
+                height: { xs: 'auto', sm: '120px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Card.Body sx={{ p: { xs: 1, sm: 2 } }}>
+                  <div className={`fw-bold ${isMobile ? 'fs-4' : 'fs-2'}`}>
+                    <AnimatedNumber value={15} />
+                  </div>
+                  <div className={isMobile ? 'fs-6' : 'fs-5'}>Events Hosted</div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={3} xs={6} className="mb-3">
-              <Card className="shadow-sm border-0 bg-warning text-dark">
-                <Card.Body>
-                  <div className="fs-2 fw-bold"><AnimatedNumber value={6} /></div>
-                  <div>Dolphins Saved</div>
+            <Col xs={6} sm={6} md={3} className="mb-3">
+              <Card className="shadow-sm border-0 bg-warning text-dark" sx={{ 
+                height: { xs: 'auto', sm: '120px' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Card.Body sx={{ p: { xs: 1, sm: 2 } }}>
+                  <div className={`fw-bold ${isMobile ? 'fs-4' : 'fs-2'}`}>
+                    <AnimatedNumber value={6} />
+                  </div>
+                  <div className={isMobile ? 'fs-6' : 'fs-5'}>Dolphins Saved</div>
                 </Card.Body>
               </Card>
             </Col>
           </Row>
           
           {/* Leaderboard Section */}
-          <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ 
+            mb: { xs: 4, sm: 6 }, 
+            display: 'flex', 
+            justifyContent: 'center',
+            px: { xs: 0, sm: 2 }
+          }}>
             <Leaderboard />
           </Box>
           
           {/* PostFeed Section */}
-          <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ 
+            mb: { xs: 4, sm: 6 }, 
+            display: 'flex', 
+            justifyContent: 'center',
+            px: { xs: 0, sm: 2 }
+          }}>
             <PostFeed />
           </Box>
           
           {/* EventsMap and CarbonFootprint Section */}
-          <Box sx={{ mb: 6 }}>
+          <Box sx={{ mb: { xs: 4, sm: 6 } }}>
             <Box sx={{ 
               display: 'flex', 
               flexDirection: 'column',
-              gap: 4,
+              gap: { xs: 3, sm: 4 },
               width: '100%',
-              px: 0,
-              my: 4
+              px: { xs: 0, sm: 2 },
+              my: { xs: 2, sm: 4 }
             }}>
               <Box sx={{ width: '100%' }}>
                 <EventsMap
@@ -215,7 +289,12 @@ function App() {
           </Box>
           
           {/* ImageClassifierChatbot Section */}
-          <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ 
+            mb: { xs: 4, sm: 6 }, 
+            display: 'flex', 
+            justifyContent: 'center',
+            px: { xs: 0, sm: 2 }
+          }}>
             <ImageClassifierChatbot floating={false} />
           </Box>
           
@@ -223,11 +302,21 @@ function App() {
           <div id="donate"></div>
           {user ? (
             <>
-              <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ 
+                mb: { xs: 4, sm: 6 }, 
+                display: 'flex', 
+                justifyContent: 'center',
+                px: { xs: 0, sm: 2 }
+              }}>
                 <DonationButton />
               </Box>
               <div id="get-involved"></div>
-              <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ 
+                mb: { xs: 4, sm: 6 }, 
+                display: 'flex', 
+                justifyContent: 'center',
+                px: { xs: 0, sm: 2 }
+              }}>
                 <GamificationEvents
                   user={user}
                   joined={joinedGamification}
@@ -238,8 +327,20 @@ function App() {
               </Box>
             </>
           ) : (
-            <Box sx={{ mb: 6, display: 'flex', justifyContent: 'center' }}>
-              <Alert variant="warning" className="text-center my-4 fade-in-section visible">
+            <Box sx={{ 
+              mb: { xs: 4, sm: 6 }, 
+              display: 'flex', 
+              justifyContent: 'center',
+              px: { xs: 1, sm: 2 }
+            }}>
+              <Alert 
+                variant="warning" 
+                className="text-center my-4 fade-in-section visible"
+                sx={{ 
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  py: { xs: 2, sm: 3 }
+                }}
+              >
                 Please log in or sign up to access Donation and Gamification features.
               </Alert>
             </Box>

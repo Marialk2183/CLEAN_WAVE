@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 
@@ -59,6 +60,58 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Mobile touch event handlers
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(0.95)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '0.8';
+  };
+
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(1)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '1';
+  };
+
+  const handleTouchCancel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(1)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '1';
+  };
+
+  // Enhanced mobile click handler
+  const handleMobileClick = (callback) => {
+    return (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Add visual feedback
+      const target = e.currentTarget;
+      target.style.transform = 'scale(0.95)';
+      target.style.opacity = '0.8';
+      
+      setTimeout(() => {
+        target.style.transform = 'scale(1)';
+        target.style.opacity = '1';
+        if (callback) {
+          callback(e);
+        }
+      }, 100);
+    };
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -262,6 +315,34 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                mode === 'ngo-signup' ? 'Partner with us' : 
                mode === 'admin' ? 'Access admin panel' : 'Sign in to your account'}
             </Typography>
+            
+            {/* Mobile Debug Button */}
+            {isMobile && (
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  onClick={() => {
+                    console.log('AuthForm mobile debug button clicked');
+                    console.log('Current mode:', mode);
+                    console.log('Touch events supported:', 'ontouchstart' in window);
+                    alert('AuthForm mobile debug: Touch events working! Current mode: ' + mode);
+                  }}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchCancel={handleTouchCancel}
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    color: COLORS.accentBlue,
+                    borderColor: COLORS.accentBlue,
+                    minHeight: '44px',
+                    fontSize: '0.75rem',
+                    '&:active': { transform: 'scale(0.95)' }
+                  }}
+                >
+                  🧪 Test Auth Touch
+                </Button>
+              </Box>
+            )}
           </Box>
           <Tabs
             value={tabIndex}
@@ -275,27 +356,36 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
             variant="fullWidth"
             sx={{
               mb: 4,
-              minHeight: 48,
+              minHeight: { xs: 56, sm: 48 },
               borderRadius: 2,
-              background: 'rgba(168, 230, 207, 0.1)',
+              background: isMobile ? '#2E7D32' : 'rgba(168, 230, 207, 0.1)',
               '& .MuiTabs-scroller': {
                 borderRadius: 2,
               },
               '.MuiTabs-indicator': {
-                backgroundColor: COLORS.accentGreen,
+                backgroundColor: isMobile ? '#4CAF50' : COLORS.accentGreen,
                 height: 3,
                 borderRadius: 1.5,
               },
               '.MuiTab-root': {
-                minHeight: 40,
-                fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
+                minHeight: { xs: 56, sm: 40 },
+                fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.9rem' },
                 fontWeight: 600,
-                color: '#666',
+                color: isMobile ? '#fff' : '#666',
                 textTransform: 'none',
-                padding: { xs: '6px 8px', sm: '8px 12px' },
+                padding: { xs: '12px 8px', sm: '8px 12px' },
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
                 '&.Mui-selected': {
-                  color: COLORS.accentGreen,
+                  color: isMobile ? '#4CAF50' : COLORS.accentGreen,
                   fontWeight: 700,
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease',
+                },
+                '&:hover': {
+                  backgroundColor: isMobile ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                 },
               },
             }}
@@ -322,6 +412,9 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 '& .MuiOutlinedInput-root': { 
                   borderRadius: 2,
                   background: '#fff',
+                  minHeight: { xs: '48px', sm: '40px' },
+                  fontSize: { xs: '16px', sm: '14px' },
+                  touchAction: 'manipulation',
                   '&:hover .MuiOutlinedInput-notchedOutline': {
                     borderColor: COLORS.accentGreen,
                   },
@@ -332,6 +425,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 },
                 '& .MuiInputLabel-root': {
                   color: '#666',
+                  fontSize: { xs: '16px', sm: '14px' },
                   '&.Mui-focused': {
                     color: COLORS.accentGreen,
                   },
@@ -352,6 +446,9 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 '& .MuiOutlinedInput-root': { 
                   borderRadius: 2,
                   background: '#fff',
+                  minHeight: { xs: '48px', sm: '40px' },
+                  fontSize: { xs: '16px', sm: '14px' },
+                  touchAction: 'manipulation',
                   '&:hover .MuiOutlinedInput-notchedOutline': {
                     borderColor: COLORS.accentGreen,
                   },
@@ -362,6 +459,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 },
                 '& .MuiInputLabel-root': {
                   color: '#666',
+                  fontSize: { xs: '16px', sm: '14px' },
                   '&.Mui-focused': {
                     color: COLORS.accentGreen,
                   },
@@ -383,6 +481,9 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                   '& .MuiOutlinedInput-root': { 
                     borderRadius: 2,
                     background: '#fff',
+                    minHeight: { xs: '48px', sm: '40px' },
+                    fontSize: { xs: '16px', sm: '14px' },
+                    touchAction: 'manipulation',
                     '&:hover .MuiOutlinedInput-notchedOutline': {
                       borderColor: COLORS.accentGreen,
                     },
@@ -393,6 +494,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                   },
                   '& .MuiInputLabel-root': {
                     color: '#666',
+                    fontSize: { xs: '16px', sm: '1rem' },
                     '&.Mui-focused': {
                       color: COLORS.accentGreen,
                     },
@@ -404,17 +506,23 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
               type="submit"
               fullWidth
               variant="contained"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchCancel}
               sx={{
                 borderRadius: 2,
                 fontSize: { xs: '1rem', sm: '1.1rem' },
                 fontWeight: 700,
-                py: 2.5,
+                py: { xs: 3, sm: 2.5 },
                 px: 4,
+                minHeight: { xs: '56px', sm: '48px' },
                 background: `linear-gradient(135deg, ${mode === "admin" ? '#E4405F' : mode === "volunteer" ? '#4CAF50' : mode === "ngo" ? '#FF9800' : mode === "volunteer-signup" ? '#4CAF50' : mode === "ngo-signup" ? '#FF9800' : COLORS.accentGreen} 0%, ${mode === "admin" ? '#C13584' : mode === "volunteer" ? '#388E3C' : mode === "ngo" ? '#F57C00' : mode === "volunteer-signup" ? '#388E3C' : mode === "ngo-signup" ? '#F57C00' : COLORS.accentBlue} 100%)`,
                 color: '#fff',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 textTransform: 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: '0 12px 32px rgba(0,0,0,0.25)',

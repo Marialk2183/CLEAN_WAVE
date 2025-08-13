@@ -14,6 +14,7 @@ import DialogActions from '@mui/material/DialogActions';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import MobileTouchTest from './MobileTouchTest';
 
 const COLORS = {
   accentGreen: '#A8E6CF',
@@ -45,6 +46,59 @@ const PostFeed = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Mobile touch event handlers with improved feedback
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(0.95)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '0.8';
+  };
+
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(1)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '1';
+  };
+
+  const handleTouchCancel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.style.transform = 'scale(1)';
+    target.style.transition = 'transform 0.1s ease';
+    target.style.opacity = '1';
+  };
+
+  // Enhanced click handler for mobile
+  const handleMobileClick = (callback, postId = null) => {
+    return (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Add visual feedback
+      const target = e.currentTarget;
+      target.style.transform = 'scale(0.95)';
+      target.style.opacity = '0.8';
+      
+      setTimeout(() => {
+        target.style.transform = 'scale(1)';
+        target.style.opacity = '1';
+        if (callback) {
+          if (postId) {
+            callback(postId);
+          } else {
+            callback();
+          }
+        }
+      }, 100);
+    };
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -126,10 +180,22 @@ const PostFeed = () => {
     }));
   };
 
-  // Handle delete post
+  // Handle delete post with mobile optimization
   const handleDeletePost = async (postId) => {
-    setPostToDelete(postId);
-    setOpenDeleteDialog(true);
+    console.log('Delete button clicked for post:', postId);
+    console.log('Is mobile device:', isMobile);
+    console.log('Touch events supported:', 'ontouchstart' in window);
+    
+    // On mobile, add a small delay to prevent accidental deletions
+    if (isMobile) {
+      setTimeout(() => {
+        setPostToDelete(postId);
+        setOpenDeleteDialog(true);
+      }, 100);
+    } else {
+      setPostToDelete(postId);
+      setOpenDeleteDialog(true);
+    }
   };
 
   const confirmDeletePost = async () => {
@@ -254,6 +320,9 @@ const PostFeed = () => {
             📱 Post Feed
           </Typography>
           
+          {/* Mobile Touch Test Component */}
+          {isMobile && <MobileTouchTest />}
+          
           <Box sx={{ 
             display: 'flex', 
             flexDirection: { xs: 'column', lg: 'row' },
@@ -360,6 +429,9 @@ const PostFeed = () => {
                         type="submit" 
                         variant="contained" 
                         fullWidth={isMobile}
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchCancel}
                         sx={{ 
                           background: COLORS.instagram, 
                           color: '#fff', 
@@ -368,7 +440,9 @@ const PostFeed = () => {
                           '&:hover': { background: '#C13584' },
                           textTransform: 'none',
                           px: { xs: 2, sm: 3 },
-                          fontSize: { xs: '0.875rem', sm: '1rem' }
+                          fontSize: { xs: '0.875rem', sm: '1rem' },
+                          '&:active': { transform: 'scale(0.95)' },
+                          minHeight: { xs: '48px', sm: '40px' }
                         }}
                         disabled={loading}
                       >
@@ -382,17 +456,48 @@ const PostFeed = () => {
             
             {/* Right Side - Posts List */}
             <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between',
+              mb: { xs: 2, sm: 3 }
+            }}>
               <Typography 
                 variant={isMobile ? "h6" : "h6"} 
                 sx={{ 
                   fontWeight: 700, 
                   color: COLORS.instagram, 
-                  mb: { xs: 2, sm: 3 },
                   fontSize: { xs: '1.125rem', sm: '1.25rem' }
                 }}
               >
                 Recent Posts
               </Typography>
+              
+              {/* Mobile Debug Button */}
+              {isMobile && (
+                <Button
+                  onClick={() => {
+                    console.log('Mobile debug button clicked');
+                    alert('Mobile debug: Touch events working!');
+                  }}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchCancel={handleTouchCancel}
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    color: COLORS.accentBlue,
+                    borderColor: COLORS.accentBlue,
+                    minHeight: '44px',
+                    fontSize: '0.75rem',
+                    '&:active': { transform: 'scale(0.95)' }
+                  }}
+                >
+                  🧪 Test Touch
+                </Button>
+              )}
+            </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
                 {loading ? (
                   <Typography sx={{ color: COLORS.accentBrown, textAlign: 'center', py: 4 }}>
@@ -458,12 +563,38 @@ const PostFeed = () => {
                               )}
                             </Box>
                           </Box>
-                          <IconButton
-                            onClick={() => handleDeletePost(post.id)}
-                            sx={{ color: COLORS.accentBrown, '&:hover': { color: '#E4405F' } }}
+                          <Button
+                            onClick={handleMobileClick(handleDeletePost, post.id)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onTouchCancel={handleTouchCancel}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            sx={{ 
+                              color: COLORS.accentBrown, 
+                              borderColor: COLORS.accentBrown,
+                              minWidth: { xs: '48px', sm: '40px' },
+                              minHeight: { xs: '48px', sm: '40px' },
+                              width: { xs: '48px', sm: '40px' },
+                              height: { xs: '48px', sm: '40px' },
+                              borderRadius: '50%',
+                              p: 0,
+                              '&:hover': { 
+                                color: '#E4405F',
+                                borderColor: '#E4405F',
+                                background: 'rgba(228, 64, 95, 0.1)'
+                              },
+                              '&:active': {
+                                transform: 'scale(0.95)'
+                              },
+                              fontSize: { xs: '16px', sm: '14px' },
+                              cursor: 'pointer',
+                              WebkitTapHighlightColor: 'transparent',
+                              touchAction: 'manipulation'
+                            }}
                           >
                             🗑️
-                          </IconButton>
+                          </Button>
                         </Box>
                         
                         {/* Post Content */}
@@ -508,39 +639,54 @@ const PostFeed = () => {
                         }}>
                           <Button
                             onClick={() => handleLike(post.id)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: likedPosts.has(post.id) ? '#E4405F' : COLORS.accentBrown,
                               minWidth: 'auto',
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
-                              '&:hover': { background: 'rgba(228, 64, 95, 0.1)' }
+                              '&:hover': { background: 'rgba(228, 64, 95, 0.1)' },
+                              '&:active': { transform: 'scale(0.95)' },
+                              minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
                             {likedPosts.has(post.id) ? '❤️' : '🤍'} Like
                           </Button>
                           <Button
                             onClick={() => toggleComments(post.id)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: COLORS.accentBrown,
                               minWidth: 'auto',
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
-                              '&:hover': { background: 'rgba(179, 229, 252, 0.1)' }
+                              '&:hover': { background: 'rgba(179, 229, 252, 0.1)' },
+                              '&:active': { transform: 'scale(0.95)' },
+                              minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
                             💬 Comment ({comments[post.id]?.length || 0})
                           </Button>
                           <Button
                             onClick={() => handleShare(post)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: COLORS.accentBrown,
                               minWidth: 'auto',
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
-                              '&:hover': { background: 'rgba(168, 230, 207, 0.1)' }
+                              '&:hover': { background: 'rgba(168, 230, 207, 0.1)' },
+                              '&:active': { transform: 'scale(0.95)' },
+                              minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
                             📤 Share
@@ -576,6 +722,9 @@ const PostFeed = () => {
                               />
                               <Button
                                 onClick={() => handleComment(post.id)}
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                                onTouchCancel={handleTouchCancel}
                                 disabled={!newComment.trim()}
                                 fullWidth={isMobile}
                                 sx={{ 
@@ -584,7 +733,9 @@ const PostFeed = () => {
                                   borderRadius: 2,
                                   fontSize: { xs: '0.875rem', sm: '1rem' },
                                   '&:hover': { background: '#C13584' },
-                                  '&:disabled': { background: COLORS.accentBrown }
+                                  '&:disabled': { background: COLORS.accentBrown },
+                                  '&:active': { transform: 'scale(0.95)' },
+                                  minHeight: { xs: '44px', sm: '36px' }
                                 }}
                               >
                                 Post
@@ -705,22 +856,32 @@ const PostFeed = () => {
           borderBottomRightRadius: { xs: 8, sm: 12 } 
         }}>
           <Button 
-            onClick={handleCancelDelete} 
+            onClick={handleCancelDelete}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
             sx={{ 
               color: COLORS.accentBrown,
               fontSize: { xs: '0.875rem', sm: '1rem' },
-              '&:hover': { background: 'rgba(179, 229, 252, 0.1)' }
+              '&:hover': { background: 'rgba(179, 229, 252, 0.1)' },
+              '&:active': { transform: 'scale(0.95)' },
+              minHeight: { xs: '44px', sm: '36px' }
             }}
           >
             Cancel
           </Button>
           <Button 
-            onClick={confirmDeletePost} 
+            onClick={confirmDeletePost}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
             sx={{ 
               background: '#E4405F',
               color: '#fff',
               fontSize: { xs: '0.875rem', sm: '1rem' },
-              '&:hover': { background: '#C13584' }
+              '&:hover': { background: '#C13584' },
+              '&:active': { transform: 'scale(0.95)' },
+              minHeight: { xs: '44px', sm: '36px' }
             }}
             variant="contained"
           >

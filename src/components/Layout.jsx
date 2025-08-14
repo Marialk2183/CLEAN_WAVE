@@ -518,7 +518,9 @@ const Layout = ({ children, user, onLoginClick }) => {
                     <ListItemButton 
                       onClick={() => {
                         setDrawerOpen(false);
-                        window.location.reload();
+                        if (onLogout) {
+                          onLogout();
+                        }
                       }}
                       sx={{ 
                         color: '#E4405F',
@@ -528,7 +530,7 @@ const Layout = ({ children, user, onLoginClick }) => {
                       }}
                     >
                       <ListItemText 
-                        primary="Logout"
+                        primary="🚪 Logout"
                         sx={{
                           '& .MuiTypography-root': {
                             fontSize: '1rem',

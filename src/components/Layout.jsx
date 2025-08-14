@@ -411,7 +411,7 @@ const Layout = ({ children, user, onLoginClick }) => {
           {/* Mobile Nav */}
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             <IconButton onClick={() => setDrawerOpen(true)}>
-              <MenuIcon sx={{ color: COLORS.accentBrown }} />
+              <MenuIcon sx={{ color: '#000000' }} />
             </IconButton>
             <Drawer 
               anchor="right" 
@@ -420,11 +420,18 @@ const Layout = ({ children, user, onLoginClick }) => {
               sx={{
                 '& .MuiDrawer-paper': {
                   width: { xs: '280px', sm: '320px' },
-                  pt: 2
+                  pt: 2,
+                  background: '#000000',
+                  color: '#ffffff'
                 }
               }}
             >
-              <List sx={{ width: '100%' }}>
+              <List sx={{ 
+                width: '100%',
+                '& .MuiListItem-root': {
+                  borderBottom: '1px solid #000000'
+                }
+              }}>
                 {navLinks.map((link) =>
                   link.dropdown ? (
                     <Box key={link.label}>
@@ -434,7 +441,7 @@ const Layout = ({ children, user, onLoginClick }) => {
                           sx={{ 
                             pl: 2, 
                             fontWeight: 700, 
-                            color: COLORS.accentBrown,
+                            color: '#ffffff',
                             '& .MuiTypography-root': {
                               fontSize: '1rem'
                             }
@@ -450,11 +457,17 @@ const Layout = ({ children, user, onLoginClick }) => {
                               setDrawerOpen(false);
                               handleNavClick(item.href);
                             }} 
-                            sx={{ pl: 4 }}
+                            sx={{ 
+                              pl: 4,
+                              '&:hover': {
+                                background: '#000000'
+                              }
+                            }}
                           >
                             <ListItemText 
                               primary={item.label}
                               sx={{
+                                color: '#ffffff',
                                 '& .MuiTypography-root': {
                                   fontSize: '0.9rem'
                                 }
@@ -481,10 +494,16 @@ const Layout = ({ children, user, onLoginClick }) => {
                             handleNavClick(link.href);
                           }
                         }}
+                        sx={{
+                          '&:hover': {
+                            background: '#000000'
+                          }
+                        }}
                       >
                         <ListItemText 
                           primary={link.label}
                           sx={{
+                            color: '#ffffff',
                             '& .MuiTypography-root': {
                               fontSize: '1rem'
                             }
@@ -501,7 +520,12 @@ const Layout = ({ children, user, onLoginClick }) => {
                         setDrawerOpen(false);
                         window.location.reload();
                       }}
-                      sx={{ color: '#E4405F' }}
+                      sx={{ 
+                        color: '#E4405F',
+                        '&:hover': {
+                          background: '#000000'
+                        }
+                      }}
                     >
                       <ListItemText 
                         primary="Logout"

@@ -158,7 +158,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
         border: '1px solid rgba(168, 230, 207, 0.2)',
         overflow: 'visible',
         position: 'relative',
-        zIndex: 1001
+        zIndex: 1001,
+        // Mobile responsive sizing
+        '@media (max-width: 768px)': {
+          maxWidth: '95%',
+          margin: '16px',
+          borderRadius: '12px'
+        }
       }}>
         {/* Header Bar */}
         <div style={{
@@ -173,7 +179,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          position: 'relative'
+          position: 'relative',
+          // Mobile responsive padding
+          '@media (max-width: 768px)': {
+            padding: '20px 16px'
+          }
         }}>
           {/* Mobile Close Button */}
           <button
@@ -193,7 +203,15 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 1002
+              zIndex: 1002,
+              // Mobile responsive sizing
+              '@media (max-width: 768px)': {
+                top: '12px',
+                right: '12px',
+                width: '28px',
+                height: '28px',
+                fontSize: '14px'
+              }
             }}
           >
             ✕
@@ -203,7 +221,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
           <div style={{
             marginBottom: '32px',
             textAlign: 'center',
-            position: 'relative'
+            position: 'relative',
+            // Mobile responsive margin
+            '@media (max-width: 768px)': {
+              marginBottom: '24px'
+            }
           }}>
             <h1 style={{
               fontWeight: 700,
@@ -212,7 +234,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               textAlign: 'center',
               letterSpacing: '0.5px',
               fontSize: '1.75rem',
-              margin: '0 0 8px 0'
+              margin: '0 0 8px 0',
+              // Mobile responsive font size
+              '@media (max-width: 768px)': {
+                fontSize: '1.5rem'
+              }
             }}>
               {mode === 'login' ? 'Welcome Back' : 
                mode === 'volunteer' ? 'Volunteer Login' : 
@@ -225,7 +251,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               color: '#666',
               fontSize: '0.9rem',
               fontWeight: 500,
-              margin: '0'
+              margin: '0',
+              // Mobile responsive font size
+              '@media (max-width: 768px)': {
+                fontSize: '0.8rem'
+              }
             }}>
               {mode === 'login' ? 'Sign in to your account' : 
                mode === 'volunteer' ? 'Access volunteer features' : 
@@ -236,7 +266,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
             </p>
             
             {/* Debug Buttons */}
-            <div style={{ marginTop: '16px' }}>
+            <div style={{ 
+              marginTop: '16px',
+              // Mobile responsive margin
+              '@media (max-width: 768px)': {
+                marginTop: '12px'
+              }
+            }}>
               <button
                 onClick={() => {
                   console.log('🧪 Debug button clicked');
@@ -255,7 +291,15 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   cursor: 'pointer',
                   marginRight: '8px',
                   minHeight: '44px',
-                  minWidth: '44px'
+                  minWidth: '44px',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '8px 12px',
+                    fontSize: '0.7rem',
+                    minHeight: '40px',
+                    minWidth: '40px',
+                    marginRight: '6px'
+                  }
                 }}
               >
                 🧪 Test Touch
@@ -274,7 +318,15 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   cursor: 'pointer',
                   marginRight: '8px',
                   minHeight: '44px',
-                  minWidth: '44px'
+                  minWidth: '44px',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '8px 12px',
+                    fontSize: '0.7rem',
+                    minHeight: '40px',
+                    minWidth: '40px',
+                    marginRight: '6px'
+                  }
                 }}
               >
                 🔴 Simple Test
@@ -297,7 +349,14 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   fontWeight: 600,
                   cursor: 'pointer',
                   minHeight: '44px',
-                  minWidth: '44px'
+                  minWidth: '44px',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '8px 12px',
+                    fontSize: '0.7rem',
+                    minHeight: '40px',
+                    minWidth: '40px'
+                  }
                 }}
               >
                 🟢 Form Test
@@ -312,7 +371,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
             background: '#2E7D32',
             borderRadius: '8px',
             marginBottom: '32px',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            // Mobile responsive margin
+            '@media (max-width: 768px)': {
+              marginBottom: '24px'
+            }
           }}>
             {[
               { key: 'login', label: 'Login' },
@@ -336,7 +399,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   cursor: 'pointer',
                   minHeight: '56px',
                   transition: 'all 0.2s ease',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '12px 6px',
+                    fontSize: '0.65rem',
+                    minHeight: '48px'
+                  }
                 }}
               >
                 {tab.label}
@@ -351,7 +420,11 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               display: 'flex',
               flexDirection: 'column',
               gap: '24px',
-              width: '100%'
+              width: '100%',
+              // Mobile responsive gap
+              '@media (max-width: 768px)': {
+                gap: '20px'
+              }
             }}
           >
             {/* Email Input */}
@@ -361,7 +434,12 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                 marginBottom: '8px',
                 color: '#666',
                 fontSize: '14px',
-                fontWeight: 500
+                fontWeight: 500,
+                // Mobile responsive font size
+                '@media (max-width: 768px)': {
+                  fontSize: '13px',
+                  marginBottom: '6px'
+                }
               }}>
                 Email
               </label>
@@ -380,7 +458,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   borderRadius: '8px',
                   background: '#fff',
                   boxSizing: 'border-box',
-                  minHeight: '48px'
+                  minHeight: '48px',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '14px',
+                    fontSize: '16px',
+                    minHeight: '44px'
+                  }
                 }}
               />
             </div>
@@ -392,7 +476,12 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                 marginBottom: '8px',
                 color: '#666',
                 fontSize: '14px',
-                fontWeight: 500
+                fontWeight: 500,
+                // Mobile responsive font size
+                '@media (max-width: 768px)': {
+                  fontSize: '13px',
+                  marginBottom: '6px'
+                }
               }}>
                 Password
               </label>
@@ -411,7 +500,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   borderRadius: '8px',
                   background: '#fff',
                   boxSizing: 'border-box',
-                  minHeight: '48px'
+                  minHeight: '48px',
+                  // Mobile responsive sizing
+                  '@media (max-width: 768px)': {
+                    padding: '14px',
+                    fontSize: '16px',
+                    minHeight: '44px'
+                  }
                 }}
               />
             </div>
@@ -424,7 +519,12 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                   marginBottom: '8px',
                   color: '#666',
                   fontSize: '14px',
-                  fontWeight: 500
+                  fontWeight: 500,
+                  // Mobile responsive font size
+                  '@media (max-width: 768px)': {
+                    fontSize: '13px',
+                    marginBottom: '6px'
+                  }
                 }}>
                   Confirm Password
                 </label>
@@ -443,7 +543,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                     borderRadius: '8px',
                     background: '#fff',
                     boxSizing: 'border-box',
-                    minHeight: '48px'
+                    minHeight: '48px',
+                    // Mobile responsive sizing
+                    '@media (max-width: 768px)': {
+                      padding: '14px',
+                      fontSize: '16px',
+                      minHeight: '44px'
+                    }
                   }}
                 />
               </div>
@@ -479,7 +585,15 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 MozUserSelect: 'none',
-                msUserSelect: 'none'
+                msUserSelect: 'none',
+                // Mobile responsive sizing
+                '@media (max-width: 768px)': {
+                  padding: '16px',
+                  fontSize: '1rem',
+                  minHeight: '56px',
+                  marginTop: '12px',
+                  marginBottom: '12px'
+                }
               }}
             >
               {isSubmitting ? '🔄 Processing...' : 
@@ -503,7 +617,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               fontWeight: 600,
               fontSize: '0.9rem',
               width: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              // Mobile responsive sizing
+              '@media (max-width: 768px)': {
+                marginTop: '20px',
+                padding: '14px',
+                fontSize: '0.8rem'
+              }
             }}>
               {error}
             </div>
@@ -521,7 +641,13 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
               fontWeight: 600,
               fontSize: '0.9rem',
               width: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              // Mobile responsive sizing
+              '@media (max-width: 768px)': {
+                marginTop: '20px',
+                padding: '14px',
+                fontSize: '0.8rem'
+              }
             }}>
               {info}
             </div>

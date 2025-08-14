@@ -13,7 +13,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { db, auth } from '../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const COLORS = {
@@ -198,30 +198,86 @@ const PostFeed = () => {
   };
 
   // Handle comment functionality
-  const handleComment = (postId) => {
+  const handleComment = async (postId) => {
     if (!newComment.trim()) return;
     
     try {
-      setComments(prev => ({
-        ...prev,
-        [postId]: [...(prev[postId] || []), { 
-          text: newComment.trim(), 
-          author: currentUser?.displayName || currentUser?.email || 'Anonymous',
-          timestamp: new Date().toISOString()
-        }]
-      }));
-      setNewComment('');
+      // Create comment data
+      const commentData = {
+        text: newComment.trim(),
+        author: currentUser?.displayName || currentUser?.email || 'Anonymous',
+        timestamp: serverTimestamp(),
+        userId: currentUser?.uid || null,
+        userEmail: currentUser?.email || null
+      };
+
+      // Add comment to the post in Firestore
+      const postRef = doc(db, "posts", postId);
+      const postDoc = await getDoc(postRef);
+      
+      if (postDoc.exists()) {
+        const currentComments = postDoc.data().comments || [];
+        const updatedComments = [...currentComments, commentData];
+        
+        // Update the post with new comment
+        await updateDoc(postRef, {
+          comments: updatedComments
+        });
+
+        // Update local state
+        setComments(prev => ({
+          ...prev,
+          [postId]: updatedComments
+        }));
+
+        // Update posts state to reflect the new comment
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, comments: updatedComments }
+            : post
+        ));
+
+        setNewComment('');
+        console.log('Comment added successfully:', commentData);
+      }
     } catch (error) {
       console.error('Error adding comment:', error);
       setError('Failed to add comment. Please try again.');
     }
   };
 
-  // Toggle comments visibility
-  const toggleComments = (postId) => {
+  // Load comments for a post
+  const loadComments = async (postId) => {
+    try {
+      const postRef = doc(db, "posts", postId);
+      const postDoc = await getDoc(postRef);
+      
+      if (postDoc.exists()) {
+        const postData = postDoc.data();
+        const postComments = postData.comments || [];
+        
+        setComments(prev => ({
+          ...prev,
+          [postId]: postComments
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    }
+  };
+
+  // Toggle comments visibility and load comments if needed
+  const toggleComments = async (postId) => {
+    const isCurrentlyVisible = showComments[postId];
+    
+    if (!isCurrentlyVisible) {
+      // Load comments when opening
+      await loadComments(postId);
+    }
+    
     setShowComments(prev => ({
       ...prev,
-      [postId]: !prev[postId]
+      [postId]: !isCurrentlyVisible
     }));
   };
 
@@ -674,7 +730,7 @@ const PostFeed = () => {
                               }
                             }}
                           >
-                            💬 Comment ({comments[post.id]?.length || 0})
+                            💬 Comment ({(post.comments || []).length})
                           </Button>
                           
                           <Button
@@ -766,7 +822,8 @@ const PostFeed = () => {
                               overflowY: 'auto',
                               mt: 2
                             }}>
-                              {comments[post.id]?.map((comment, idx) => (
+                              {/* Show comments from post data first, then from local state */}
+                              {(post.comments || comments[post.id] || []).map((comment, idx) => (
                                 <Box key={idx} sx={{ 
                                   p: { xs: 1.5, sm: 1 }, 
                                   mb: { xs: 1.5, sm: 1 }, 
@@ -776,14 +833,34 @@ const PostFeed = () => {
                                   // Mobile touch optimizations
                                   touchAction: 'manipulation'
                                 }}>
-                                  <Typography sx={{ 
-                                    fontWeight: 600, 
-                                    fontSize: { xs: '0.8rem', sm: '0.75rem' },
-                                    color: COLORS.black,
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
                                     mb: 0.5
                                   }}>
-                                    👤 {comment.author}
-                                  </Typography>
+                                    <Typography sx={{ 
+                                      fontWeight: 600, 
+                                      fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                                      color: COLORS.black
+                                    }}>
+                                      👤 {comment.author || 'Anonymous'}
+                                    </Typography>
+                                    {comment.timestamp && (
+                                      <Typography sx={{ 
+                                        fontSize: { xs: '0.7rem', sm: '0.65rem' },
+                                        color: COLORS.accentBrown,
+                                        fontStyle: 'italic'
+                                      }}>
+                                        {comment.timestamp?.seconds ? 
+                                          new Date(comment.timestamp.seconds * 1000).toLocaleDateString() :
+                                          comment.timestamp?.toDate ? 
+                                            comment.timestamp.toDate().toLocaleDateString() :
+                                            'Just now'
+                                        }
+                                      </Typography>
+                                    )}
+                                  </Box>
                                   <Typography sx={{ 
                                     fontSize: { xs: '0.875rem', sm: '0.75rem' },
                                     color: COLORS.black,
@@ -795,7 +872,8 @@ const PostFeed = () => {
                               ))}
                               
                               {/* No Comments Message */}
-                              {(!comments[post.id] || comments[post.id].length === 0) && (
+                              {(!post.comments || post.comments.length === 0) && 
+                               (!comments[post.id] || comments[post.id].length === 0) && (
                                 <Box sx={{ 
                                   p: 2, 
                                   textAlign: 'center',

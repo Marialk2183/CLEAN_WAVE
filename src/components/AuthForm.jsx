@@ -113,6 +113,15 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
     };
   };
 
+  // Enhanced tab change handler for mobile
+  const handleTabChange = (_, idx) => {
+    const newMode = idx === 0 ? 'login' : idx === 1 ? 'volunteer' : idx === 2 ? 'ngo' : idx === 3 ? 'volunteer-signup' : idx === 4 ? 'ngo-signup' : idx === 5 ? 'admin' : 'login';
+    setMode(newMode);
+    if (onModeChange) {
+      onModeChange(newMode);
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -253,18 +262,28 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'transparent',
+        background: isMobile ? 'rgba(0,0,0,0.8)' : 'transparent',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        width: '100%',
+        px: { xs: 2, sm: 0 },
+        py: { xs: 2, sm: 0 }
       }}
     >
       <Card sx={{
-        maxWidth: 800,
+        maxWidth: { xs: '100%', sm: 800 },
         width: '100%',
-        borderRadius: 4,
+        borderRadius: { xs: 2, sm: 4 },
         boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
         border: '1px solid rgba(168, 230, 207, 0.2)',
         overflow: 'hidden',
         position: 'relative',
+        zIndex: 1001,
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -276,13 +295,33 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
         }
       }}>
         <CardContent sx={{ 
-          p: { xs: 4, sm: 5 }, 
+          p: { xs: 2, sm: 5 }, 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
           justifyContent: 'center',
-          position: 'relative'
+          position: 'relative',
+          minHeight: { xs: 'auto', sm: 0 }
         }}>
+          {/* Mobile Close Button */}
+          {isMobile && (
+            <Button
+              onClick={() => window.location.reload()}
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                minWidth: '32px',
+                minHeight: '32px',
+                borderRadius: '50%',
+                background: '#E4405F',
+                color: '#fff',
+                '&:hover': { background: '#C13584' }
+              }}
+            >
+              ✕
+            </Button>
+          )}
           <Box sx={{ 
             mb: 3, 
             textAlign: 'center',
@@ -346,13 +385,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
           </Box>
           <Tabs
             value={tabIndex}
-            onChange={(_, idx) => {
-              const newMode = idx === 0 ? 'login' : idx === 1 ? 'volunteer' : idx === 2 ? 'ngo' : idx === 3 ? 'volunteer-signup' : idx === 4 ? 'ngo-signup' : idx === 5 ? 'admin' : 'login';
-              setMode(newMode);
-              if (onModeChange) {
-                onModeChange(newMode);
-              }
-            }}
+            onChange={handleTabChange}
             variant="fullWidth"
             sx={{
               mb: 4,
@@ -376,9 +409,11 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 padding: { xs: '12px 8px', sm: '8px 12px' },
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
+                cursor: 'pointer',
                 '&.Mui-selected': {
                   color: isMobile ? '#4CAF50' : COLORS.accentGreen,
                   fontWeight: 700,
+                  backgroundColor: isMobile ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                 },
                 '&:active': {
                   transform: 'scale(0.95)',
@@ -408,6 +443,9 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
               required
               fullWidth
               variant="outlined"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchCancel}
               sx={{ 
                 '& .MuiOutlinedInput-root': { 
                   borderRadius: 2,
@@ -415,6 +453,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                   minHeight: { xs: '48px', sm: '40px' },
                   fontSize: { xs: '16px', sm: '14px' },
                   touchAction: 'manipulation',
+                  cursor: 'pointer',
                   '&:hover .MuiOutlinedInput-notchedOutline': {
                     borderColor: COLORS.accentGreen,
                   },
@@ -506,6 +545,7 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
               type="submit"
               fullWidth
               variant="contained"
+              onClick={handleMobileClick(() => {})}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchCancel}
@@ -523,12 +563,17 @@ const AuthForm = ({ onAuth, initialMode = "login", onModeChange }) => {
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
+                cursor: 'pointer',
                 '&:hover': {
                   transform: 'translateY(-2px)',
                   boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
                 },
                 '&:active': {
                   transform: 'translateY(0)',
+                },
+                '&:focus': {
+                  outline: 'none',
+                  boxShadow: '0 0 0 3px rgba(76, 175, 80, 0.3)',
                 },
                 mb: 2,
                 mt: 2,

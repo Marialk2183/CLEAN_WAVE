@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../components/index.css';
-import AuthForm from './AuthForm';import NotificationBell from './NotificationBell';
+import AuthForm from './AuthForm';
+import NotificationBell from './NotificationBell';
+import MobileDebugPanel from './MobileDebugPanel';
 import Leaderboard from './Leaderboard';
 import Chatbot from './Chatbot';
 import EventsMap from './EventsMap';
@@ -137,6 +139,9 @@ export default function App() {
           <Leaderboard leaderboard={leaderboard} />
           <PostFeed posts={posts} />
           <CarbonFootprintCalculator onSave={setCarbonFootprint} />
+          {/* Mobile Debug Panel - Only visible on mobile */}
+          <MobileDebugPanel />
+          
           {/* Waste Classifier Section - directly below CarbonFootprintCalculator */}
           <div className="waste-classifier-section" style={{ margin: '32px 0', position: 'relative', zIndex: 10 }}>
             <h2 style={{ fontWeight: 700, color: '#A8E6CF', marginBottom: 16 }}>Waste Classifier</h2>

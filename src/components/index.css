@@ -140,34 +140,6 @@ body {
   }
 }
 
-/* iOS specific fixes */
-@supports (-webkit-touch-callout: none) {
-  /* iOS Safari specific styles */
-  button, input, textarea, select {
-    -webkit-appearance: none;
-    border-radius: 0;
-  }
-  
-  /* Fix iOS button styling */
-  .MuiButton-root {
-    -webkit-appearance: none;
-    -webkit-border-radius: 0;
-  }
-}
-
-/* Android specific fixes */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  /* Android Chrome specific styles */
-  button:focus {
-    outline: none;
-  }
-  
-  /* Improve Android touch feedback */
-  .MuiButton-root:active {
-    background-color: rgba(0,0,0,0.1);
-  }
-}
-
 /* AuthForm specific mobile optimizations */
 @media (max-width: 768px) {
   /* Improve tab touch targets */
@@ -249,6 +221,177 @@ body {
     background-color: #4CAF50 !important;
     height: 4px !important;
     border-radius: 2px !important;
+  }
+}
+
+/* Critical mobile touch fixes */
+@media (max-width: 768px) {
+  /* Ensure all buttons are clickable on mobile */
+  button, .MuiButton-root, [role="button"] {
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+  }
+  
+  /* Fix tab clickability */
+  .MuiTab-root {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Ensure form inputs work on mobile */
+  input, textarea, select, .MuiTextField-root input {
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Fix Material-UI button issues on mobile */
+  .MuiButtonBase-root {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Ensure proper touch targets */
+  .MuiButton-root, .MuiTab-root, .MuiIconButton-root {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  /* Fix focus states for mobile */
+  .MuiButton-root:focus, .MuiTab-root:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3) !important;
+  }
+  
+  /* Improve mobile button responsiveness */
+  .MuiButton-root:active, .MuiTab-root:active {
+    transform: scale(0.95) !important;
+    transition: transform 0.1s ease !important;
+  }
+}
+
+/* Critical AuthForm mobile visibility fixes */
+@media (max-width: 768px) {
+  /* Ensure AuthForm is always visible on mobile */
+  .MuiBox-root:has(.MuiCard-root) {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: rgba(0,0,0,0.8) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+  }
+  
+  /* Ensure Card is visible and properly sized */
+  .MuiCard-root {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: relative !important;
+    z-index: 10000 !important;
+    background: #fff !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+  }
+  
+  /* Ensure CardContent is properly visible */
+  .MuiCardContent-root {
+    padding: 16px !important;
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Fix mobile form layout */
+  .MuiBox-root[component="form"] {
+    width: 100% !important;
+    gap: 16px !important;
+  }
+  
+  /* Ensure tabs are visible and clickable */
+  .MuiTabs-root {
+    width: 100% !important;
+    margin-bottom: 16px !important;
+    background: #2E7D32 !important;
+    border-radius: 8px !important;
+  }
+  
+  /* Fix mobile tab sizing */
+  .MuiTab-root {
+    min-height: 48px !important;
+    font-size: 0.75rem !important;
+    padding: 8px 4px !important;
+  }
+  
+  /* Ensure submit button is visible and clickable */
+  .MuiButton-root[type="submit"] {
+    width: 100% !important;
+    min-height: 48px !important;
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Force mobile AuthForm visibility */
+@media (max-width: 768px) {
+  /* Override any conflicting styles */
+  .MuiBox-root {
+    position: fixed !important;
+    z-index: 9999 !important;
+    background: rgba(0,0,0,0.8) !important;
+  }
+  
+  /* Ensure form elements are visible */
+  .MuiTextField-root, .MuiButton-root, .MuiTabs-root {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+  }
+  
+  /* Fix any overflow issues */
+  .MuiCard-root {
+    overflow: visible !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .MuiButton-root, .MuiTab-root, button {
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Fix iOS button styling */
+  .MuiButton-root {
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+  }
+}
+
+/* Android specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .MuiButton-root:focus, .MuiTab-root:focus {
+    outline: none !important;
+  }
+  
+  /* Improve Android touch feedback */
+  .MuiButton-root:active, .MuiTab-root:active {
+    background-color: rgba(0,0,0,0.1) !important;
   }
 }
 

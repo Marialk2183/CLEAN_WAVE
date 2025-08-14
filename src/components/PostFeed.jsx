@@ -548,7 +548,8 @@ const PostFeed = () => {
                               )}
                             </Box>
                           </Box>
-                          {/* Only show delete button if user owns the post or is admin */}
+                          
+                          {/* Delete Button - Always show for post owners or admins */}
                           {(currentUser && (post.userId === currentUser.uid || currentUser.email === 'admin@cleanwave.com')) && (
                             <Button
                               onClick={() => handleDeletePost(post.id)}
@@ -569,7 +570,14 @@ const PostFeed = () => {
                                   background: 'rgba(228, 64, 95, 0.1)'
                                 },
                                 fontSize: { xs: '16px', sm: '14px' },
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                // Mobile touch optimizations
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                userSelect: 'none',
+                                // Ensure visibility on mobile
+                                zIndex: 10,
+                                position: 'relative'
                               }}
                             >
                               🗑️
@@ -626,11 +634,23 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(228, 64, 95, 0.1)' },
-                              minHeight: { xs: '44px', sm: '36px' }
+                              minHeight: { xs: '48px', sm: '36px' },
+                              // Mobile touch optimizations
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'transparent',
+                              userSelect: 'none',
+                              borderRadius: { xs: '8px', sm: '4px' },
+                              fontWeight: 600,
+                              // Enhanced mobile styling
+                              '&:active': {
+                                transform: 'scale(0.95)',
+                                transition: 'transform 0.1s ease'
+                              }
                             }}
                           >
                             {likedPosts.has(post.id) ? '❤️' : '🤍'} Like
                           </Button>
+                          
                           <Button
                             onClick={() => toggleComments(post.id)}
                             fullWidth={isMobile}
@@ -640,11 +660,23 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(179, 229, 252, 0.1)' },
-                              minHeight: { xs: '44px', sm: '36px' }
+                              minHeight: { xs: '48px', sm: '36px' },
+                              // Mobile touch optimizations
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'transparent',
+                              userSelect: 'none',
+                              borderRadius: { xs: '8px', sm: '4px' },
+                              fontWeight: 600,
+                              // Enhanced mobile styling
+                              '&:active': {
+                                transform: 'scale(0.95)',
+                                transition: 'transform 0.1s ease'
+                              }
                             }}
                           >
                             💬 Comment ({comments[post.id]?.length || 0})
                           </Button>
+                          
                           <Button
                             onClick={() => handleShare(post)}
                             fullWidth={isMobile}
@@ -654,7 +686,18 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(168, 230, 207, 0.1)' },
-                              minHeight: { xs: '44px', sm: '36px' }
+                              minHeight: { xs: '48px', sm: '36px' },
+                              // Mobile touch optimizations
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'transparent',
+                              userSelect: 'none',
+                              borderRadius: { xs: '8px', sm: '4px' },
+                              fontWeight: 600,
+                              // Enhanced mobile styling
+                              '&:active': {
+                                transform: 'scale(0.95)',
+                                transition: 'transform 0.1s ease'
+                              }
                             }}
                           >
                             📤 Share
@@ -669,7 +712,12 @@ const PostFeed = () => {
                             px: { xs: 1.5, sm: 2 }, 
                             borderTop: `1px solid ${COLORS.background}` 
                           }}>
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              gap: { xs: 1, sm: 1 }, 
+                              mb: 2 
+                            }}>
                               <TextField
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
@@ -678,8 +726,9 @@ const PostFeed = () => {
                                 fullWidth
                                 sx={{ 
                                   '& .MuiOutlinedInput-root': { 
-                                    borderRadius: 2,
-                                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                                    borderRadius: { xs: 2, sm: 2 },
+                                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                                    minHeight: { xs: '48px', sm: '40px' }
                                   } 
                                 }}
                               />
@@ -687,42 +736,77 @@ const PostFeed = () => {
                                 onClick={() => handleComment(post.id)}
                                 variant="contained"
                                 size="small"
+                                fullWidth={isMobile}
                                 sx={{ 
                                   background: COLORS.instagram,
                                   minWidth: 'auto',
-                                  px: 2,
-                                  borderRadius: 2,
+                                  px: { xs: 3, sm: 2 },
+                                  borderRadius: { xs: 2, sm: 2 },
                                   fontSize: { xs: '0.875rem', sm: '1rem' },
-                                  minHeight: { xs: '40px', sm: '32px' }
+                                  minHeight: { xs: '48px', sm: '32px' },
+                                  fontWeight: 600,
+                                  // Mobile touch optimizations
+                                  touchAction: 'manipulation',
+                                  WebkitTapHighlightColor: 'transparent',
+                                  userSelect: 'none',
+                                  // Enhanced mobile styling
+                                  '&:active': {
+                                    transform: 'scale(0.95)',
+                                    transition: 'transform 0.1s ease'
+                                  }
                                 }}
                               >
-                                Post
+                                💬 Post Comment
                               </Button>
                             </Box>
-                            {comments[post.id]?.map((comment, idx) => (
-                              <Box key={idx} sx={{ 
-                                p: 1, 
-                                mb: 1, 
-                                background: COLORS.background, 
-                                borderRadius: 2,
-                                border: `1px solid ${COLORS.accentBlue}` 
-                              }}>
-                                <Typography sx={{ 
-                                  fontWeight: 600, 
-                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                                  color: COLORS.black,
-                                  mb: 0.5
+                            
+                            {/* Comments List */}
+                            <Box sx={{ 
+                              maxHeight: { xs: '200px', sm: '300px' }, 
+                              overflowY: 'auto',
+                              mt: 2
+                            }}>
+                              {comments[post.id]?.map((comment, idx) => (
+                                <Box key={idx} sx={{ 
+                                  p: { xs: 1.5, sm: 1 }, 
+                                  mb: { xs: 1.5, sm: 1 }, 
+                                  background: COLORS.background, 
+                                  borderRadius: { xs: 2, sm: 2 },
+                                  border: `1px solid ${COLORS.accentBlue}`,
+                                  // Mobile touch optimizations
+                                  touchAction: 'manipulation'
                                 }}>
-                                  {comment.author}
-                                </Typography>
-                                <Typography sx={{ 
-                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                                  color: COLORS.black 
+                                  <Typography sx={{ 
+                                    fontWeight: 600, 
+                                    fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                                    color: COLORS.black,
+                                    mb: 0.5
+                                  }}>
+                                    👤 {comment.author}
+                                  </Typography>
+                                  <Typography sx={{ 
+                                    fontSize: { xs: '0.875rem', sm: '0.75rem' },
+                                    color: COLORS.black,
+                                    lineHeight: 1.4
+                                  }}>
+                                    {comment.text}
+                                  </Typography>
+                                </Box>
+                              ))}
+                              
+                              {/* No Comments Message */}
+                              {(!comments[post.id] || comments[post.id].length === 0) && (
+                                <Box sx={{ 
+                                  p: 2, 
+                                  textAlign: 'center',
+                                  color: COLORS.accentBrown,
+                                  fontStyle: 'italic',
+                                  fontSize: { xs: '0.875rem', sm: '0.75rem' }
                                 }}>
-                                  {comment.text}
-                                </Typography>
-                              </Box>
-                            ))}
+                                  💭 No comments yet. Be the first to comment!
+                                </Box>
+                              )}
+                            </Box>
                           </Box>
                         )}
                       </CardContent>
@@ -752,4 +836,4 @@ const PostFeed = () => {
   );
 };
 
-export default PostFeed; 
+export default PostFeed;

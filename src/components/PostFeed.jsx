@@ -12,9 +12,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useTheme, useMediaQuery } from '@mui/material';
-import { db } from '../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import MobileTouchTest from './MobileTouchTest';
+import { db, auth } from '../firebase';
+import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const COLORS = {
   accentGreen: '#A8E6CF',
@@ -43,110 +43,145 @@ const PostFeed = () => {
   const [showComments, setShowComments] = useState({});
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Mobile touch event handlers with improved feedback
-  const handleTouchStart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const target = e.currentTarget;
-    target.style.transform = 'scale(0.95)';
-    target.style.transition = 'transform 0.1s ease';
-    target.style.opacity = '0.8';
-  };
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        setAuthor(user.displayName || user.email || 'Anonymous');
+      }
+    });
 
-  const handleTouchEnd = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const target = e.currentTarget;
-    target.style.transform = 'scale(1)';
-    target.style.transition = 'transform 0.1s ease';
-    target.style.opacity = '1';
-  };
-
-  const handleTouchCancel = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const target = e.currentTarget;
-    target.style.transform = 'scale(1)';
-    target.style.transition = 'transform 0.1s ease';
-    target.style.opacity = '1';
-  };
-
-  // Enhanced click handler for mobile
-  const handleMobileClick = (callback, postId = null) => {
-    return (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Add visual feedback
-      const target = e.currentTarget;
-      target.style.transform = 'scale(0.95)';
-      target.style.opacity = '0.8';
-      
-      setTimeout(() => {
-        target.style.transform = 'scale(1)';
-        target.style.opacity = '1';
-        if (callback) {
-          if (postId) {
-            callback(postId);
-          } else {
-            callback();
-          }
-        }
-      }, 100);
-    };
-  };
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchPosts = async () => {
-      setLoading(true);
-      const querySnapshot = await getDocs(collection(db, "posts"));
-      const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Fetched posts:', fetched); // Debug log
-      setPosts(fetched.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError('');
+        
+        // Create a query with proper ordering and limits
+        const postsQuery = query(
+          collection(db, "posts"),
+          orderBy("timestamp", "desc"),
+          limit(50)
+        );
+        
+        const querySnapshot = await getDocs(postsQuery);
+        const fetched = querySnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+        
+        console.log('Fetched posts:', fetched);
+        setPosts(fetched);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setError('Failed to load posts. Please try again later.');
+        
+        // If it's a permission error, show a helpful message
+        if (error.code === 'permission-denied') {
+          setError('Access denied. Please make sure you are logged in.');
+        }
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchPosts();
   }, []);
 
   // Add a new post with image (Cloudinary)
   const handleAddPost = async (e) => {
     e.preventDefault();
-    if (!author.trim() || !content.trim()) return;
-    setLoading(true);
-    let imageUrl = '';
-    if (image) {
-      const formData = new FormData();
-      formData.append("file", image);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      const response = await fetch(CLOUDINARY_URL, {
-        method: "POST",
-        body: formData
-      });
-      const data = await response.json();
-      imageUrl = data.secure_url;
+    
+    if (!author.trim() || !content.trim()) {
+      setError('Please fill in all required fields.');
+      return;
     }
-    await addDoc(collection(db, "posts"), {
-      author,
-      content,
-      location,
-      imageUrl,
-      timestamp: serverTimestamp(),
-      likes: 0,
-      comments: []
-    });
-    // Re-fetch posts to ensure the latest post (with image) is shown
-    const querySnapshot = await getDocs(collection(db, "posts"));
-    const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setPosts(fetched.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-    setAuthor('');
-    setContent('');
-    setLocation('');
-    setImage(null);
-    setLoading(false);
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      let imageUrl = '';
+      if (image) {
+        const formData = new FormData();
+        formData.append("file", image);
+        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+        
+        const response = await fetch(CLOUDINARY_URL, {
+          method: "POST",
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+        
+        const data = await response.json();
+        imageUrl = data.secure_url;
+      }
+
+      // Add post to Firestore
+      const postData = {
+        author: author.trim(),
+        content: content.trim(),
+        location: location.trim() || null,
+        imageUrl: imageUrl || null,
+        timestamp: serverTimestamp(),
+        likes: 0,
+        comments: [],
+        userId: currentUser?.uid || null,
+        userEmail: currentUser?.email || null,
+        createdAt: new Date().toISOString()
+      };
+
+      console.log('Creating post with data:', postData);
+      console.log('Current user:', currentUser);
+      console.log('User ID:', currentUser?.uid);
+
+      const docRef = await addDoc(collection(db, "posts"), postData);
+      console.log('Post created successfully with ID:', docRef.id);
+      
+      // Re-fetch posts to show the new post
+      const postsQuery = query(
+        collection(db, "posts"),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+      const querySnapshot = await getDocs(postsQuery);
+      const fetched = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      
+      setPosts(fetched);
+      setAuthor('');
+      setContent('');
+      setLocation('');
+      setImage(null);
+      
+    } catch (error) {
+      console.error('Error adding post:', error);
+      
+      if (error.code === 'permission-denied') {
+        setError('Access denied. Please make sure you are logged in and have permission to create posts.');
+      } else if (error.code === 'unauthenticated') {
+        setError('You must be logged in to create posts. Please log in and try again.');
+      } else {
+        setError(`Failed to create post: ${error.message}. Please try again.`);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle like functionality
@@ -165,11 +200,21 @@ const PostFeed = () => {
   // Handle comment functionality
   const handleComment = (postId) => {
     if (!newComment.trim()) return;
-    setComments(prev => ({
-      ...prev,
-      [postId]: [...(prev[postId] || []), { text: newComment, author: 'Anonymous' }]
-    }));
-    setNewComment('');
+    
+    try {
+      setComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), { 
+          text: newComment.trim(), 
+          author: currentUser?.displayName || currentUser?.email || 'Anonymous',
+          timestamp: new Date().toISOString()
+        }]
+      }));
+      setNewComment('');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      setError('Failed to add comment. Please try again.');
+    }
   };
 
   // Toggle comments visibility
@@ -180,124 +225,75 @@ const PostFeed = () => {
     }));
   };
 
-  // Handle delete post with mobile optimization
+  // Handle delete post
   const handleDeletePost = async (postId) => {
-    console.log('Delete button clicked for post:', postId);
-    console.log('Is mobile device:', isMobile);
-    console.log('Touch events supported:', 'ontouchstart' in window);
-    
-    // On mobile, add a small delay to prevent accidental deletions
-    if (isMobile) {
-      setTimeout(() => {
-        setPostToDelete(postId);
-        setOpenDeleteDialog(true);
-      }, 100);
-    } else {
+    try {
+      // Check if user is authenticated and owns the post
+      if (!currentUser) {
+        setError('You must be logged in to delete posts.');
+        return;
+      }
+      
       setPostToDelete(postId);
       setOpenDeleteDialog(true);
+    } catch (error) {
+      console.error('Error preparing to delete post:', error);
+      setError('Failed to delete post. Please try again.');
     }
   };
 
+  // Confirm delete post
   const confirmDeletePost = async () => {
-    if (postToDelete) {
+    if (!postToDelete) return;
+    
+    try {
+      setError('');
       await deleteDoc(doc(db, "posts", postToDelete));
-      setPosts(posts.filter(post => post.id !== postToDelete));
+      
+      // Update local state
+      setPosts(prev => prev.filter(post => post.id !== postToDelete));
       setOpenDeleteDialog(false);
       setPostToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setOpenDeleteDialog(false);
-    setPostToDelete(null);
-  };
-
-  const handleShare = (post) => {
-    const shareText = `${post.author} shared: "${post.content}"${post.location ? ` 📍 ${post.location}` : ''}`;
-    const shareUrl = window.location.href;
-    
-    // Create share data
-    const shareData = {
-      title: 'CleanWave Post',
-      text: shareText,
-      url: shareUrl
-    };
-
-    // Try native sharing first
-    if (navigator.share) {
-      navigator.share(shareData).catch(console.error);
-    } else {
-      // Fallback to manual sharing options
-      const shareOptions = [
-        {
-          name: 'WhatsApp',
-          url: `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
-          icon: '💬'
-        },
-        {
-          name: 'Instagram',
-          url: `https://www.instagram.com/?url=${encodeURIComponent(shareUrl)}`,
-          icon: '📷'
-        },
-        {
-          name: 'Facebook',
-          url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
-          icon: '📘'
-        },
-        {
-          name: 'Twitter',
-          url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-          icon: '🐦'
-        },
-        {
-          name: 'Copy Link',
-          action: () => {
-            navigator.clipboard.writeText(shareUrl);
-            alert('Link copied to clipboard!');
-          },
-          icon: '📋'
-        }
-      ];
-
-      // Show share options
-      const selectedOption = window.confirm(
-        'Choose sharing method:\n\n' +
-        shareOptions.map((option, index) => `${index + 1}. ${option.icon} ${option.name}`).join('\n') +
-        '\n\nClick OK to open WhatsApp, or Cancel to see other options.'
-      );
-
-      if (selectedOption) {
-        // Open WhatsApp
-        window.open(shareOptions[0].url, '_blank');
-      } else {
-        // Show other options
-        const option = window.prompt(
-          'Enter number for sharing option:\n' +
-          shareOptions.map((opt, idx) => `${idx + 1}. ${opt.icon} ${opt.name}`).join('\n')
-        );
-        
-        const optionIndex = parseInt(option) - 1;
-        if (optionIndex >= 0 && optionIndex < shareOptions.length) {
-          const selectedShareOption = shareOptions[optionIndex];
-          if (selectedShareOption.action) {
-            selectedShareOption.action();
-          } else {
-            window.open(selectedShareOption.url, '_blank');
-          }
-        }
+      
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      setError('Failed to delete post. Please try again.');
+      
+      if (error.code === 'permission-denied') {
+        setError('Access denied. You can only delete your own posts.');
       }
     }
   };
 
+  // Handle share functionality
+  const handleShare = (post) => {
+    try {
+      if (navigator.share) {
+        navigator.share({
+          title: `Post by ${post.author}`,
+          text: post.content,
+          url: window.location.href
+        });
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(post.content);
+        alert('Post content copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      // Fallback to alert
+      alert('Post content copied to clipboard!');
+    }
+  };
+
   return (
-    <Box
-      sx={{
-        width: '100%',
-        maxWidth: 4800,
-        mx: 'auto',
-        px: { xs: 1, sm: 2, md: 0 }
-      }}
-    >
+    <Box sx={{ 
+      width: '100%', 
+      maxWidth: '1200px', 
+      mx: 'auto', 
+      px: { xs: 2, sm: 3, md: 4 },
+      py: { xs: 3, sm: 4, md: 5 }
+    }}>
       <Card sx={{ 
         width: '100%', 
         borderRadius: { xs: 3, sm: 4, md: 6 }, 
@@ -320,8 +316,21 @@ const PostFeed = () => {
             📱 Post Feed
           </Typography>
           
-          {/* Mobile Touch Test Component */}
-          {isMobile && <MobileTouchTest />}
+          {/* Error Display */}
+          {error && (
+            <Box sx={{ 
+              mb: 3, 
+              p: 2, 
+              borderRadius: 2, 
+              background: '#ffebee', 
+              border: '1px solid #ffcdd2',
+              color: '#c62828'
+            }}>
+              <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                ⚠️ {error}
+              </Typography>
+            </Box>
+          )}
           
           <Box sx={{ 
             display: 'flex', 
@@ -368,6 +377,7 @@ const PostFeed = () => {
                         value={author}
                         onChange={e => setAuthor(e.target.value)}
                         size={isMobile ? "small" : "medium"}
+                        required
                         sx={{ 
                           flex: 1, 
                           borderRadius: 3, 
@@ -390,6 +400,7 @@ const PostFeed = () => {
                       onChange={e => setContent(e.target.value)}
                       multiline
                       rows={isMobile ? 2 : 3}
+                      required
                       sx={{ borderRadius: 3, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                     />
                     
@@ -418,7 +429,8 @@ const PostFeed = () => {
                             '&:hover': { background: COLORS.instagram, color: '#fff' },
                             textTransform: 'none',
                             fontWeight: 600,
-                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            minHeight: { xs: '48px', sm: '40px' }
                           }}
                         >
                           📷 {image ? "Image Selected" : "Add Image"}
@@ -429,9 +441,6 @@ const PostFeed = () => {
                         type="submit" 
                         variant="contained" 
                         fullWidth={isMobile}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                        onTouchCancel={handleTouchCancel}
                         sx={{ 
                           background: COLORS.instagram, 
                           color: '#fff', 
@@ -441,7 +450,6 @@ const PostFeed = () => {
                           textTransform: 'none',
                           px: { xs: 2, sm: 3 },
                           fontSize: { xs: '0.875rem', sm: '1rem' },
-                          '&:active': { transform: 'scale(0.95)' },
                           minHeight: { xs: '48px', sm: '40px' }
                         }}
                         disabled={loading}
@@ -456,48 +464,25 @@ const PostFeed = () => {
             
             {/* Right Side - Posts List */}
             <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Box sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'stretch', sm: 'center' },
-              justifyContent: 'space-between',
-              mb: { xs: 2, sm: 3 }
-            }}>
-              <Typography 
-                variant={isMobile ? "h6" : "h6"} 
-                sx={{ 
-                  fontWeight: 700, 
-                  color: COLORS.instagram, 
-                  fontSize: { xs: '1.125rem', sm: '1.25rem' }
-                }}
-              >
-                Recent Posts
-              </Typography>
-              
-              {/* Mobile Debug Button */}
-              {isMobile && (
-                <Button
-                  onClick={() => {
-                    console.log('Mobile debug button clicked');
-                    alert('Mobile debug: Touch events working!');
-                  }}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  onTouchCancel={handleTouchCancel}
-                  variant="outlined"
-                  size="small"
-                  sx={{
-                    color: COLORS.accentBlue,
-                    borderColor: COLORS.accentBlue,
-                    minHeight: '44px',
-                    fontSize: '0.75rem',
-                    '&:active': { transform: 'scale(0.95)' }
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                justifyContent: 'space-between',
+                mb: { xs: 2, sm: 3 }
+              }}>
+                <Typography 
+                  variant={isMobile ? "h6" : "h6"} 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: COLORS.instagram, 
+                    fontSize: { xs: '1.125rem', sm: '1.25rem' }
                   }}
                 >
-                  🧪 Test Touch
-                </Button>
-              )}
-            </Box>
+                  Recent Posts
+                </Typography>
+              </Box>
+              
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
                 {loading ? (
                   <Typography sx={{ color: COLORS.accentBrown, textAlign: 'center', py: 4 }}>
@@ -563,38 +548,33 @@ const PostFeed = () => {
                               )}
                             </Box>
                           </Box>
-                          <Button
-                            onClick={handleMobileClick(handleDeletePost, post.id)}
-                            onTouchStart={handleTouchStart}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchCancel={handleTouchCancel}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            sx={{ 
-                              color: COLORS.accentBrown, 
-                              borderColor: COLORS.accentBrown,
-                              minWidth: { xs: '48px', sm: '40px' },
-                              minHeight: { xs: '48px', sm: '40px' },
-                              width: { xs: '48px', sm: '40px' },
-                              height: { xs: '48px', sm: '40px' },
-                              borderRadius: '50%',
-                              p: 0,
-                              '&:hover': { 
-                                color: '#E4405F',
-                                borderColor: '#E4405F',
-                                background: 'rgba(228, 64, 95, 0.1)'
-                              },
-                              '&:active': {
-                                transform: 'scale(0.95)'
-                              },
-                              fontSize: { xs: '16px', sm: '14px' },
-                              cursor: 'pointer',
-                              WebkitTapHighlightColor: 'transparent',
-                              touchAction: 'manipulation'
-                            }}
-                          >
-                            🗑️
-                          </Button>
+                          {/* Only show delete button if user owns the post or is admin */}
+                          {(currentUser && (post.userId === currentUser.uid || currentUser.email === 'admin@cleanwave.com')) && (
+                            <Button
+                              onClick={() => handleDeletePost(post.id)}
+                              variant="outlined"
+                              size={isMobile ? "small" : "medium"}
+                              sx={{ 
+                                color: COLORS.accentBrown, 
+                                borderColor: COLORS.accentBrown,
+                                minWidth: { xs: '48px', sm: '40px' },
+                                minHeight: { xs: '48px', sm: '40px' },
+                                width: { xs: '48px', sm: '40px' },
+                                height: { xs: '48px', sm: '40px' },
+                                borderRadius: '50%',
+                                p: 0,
+                                '&:hover': { 
+                                  color: '#E4405F',
+                                  borderColor: '#E4405F',
+                                  background: 'rgba(228, 64, 95, 0.1)'
+                                },
+                                fontSize: { xs: '16px', sm: '14px' },
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🗑️
+                            </Button>
+                          )}
                         </Box>
                         
                         {/* Post Content */}
@@ -639,9 +619,6 @@ const PostFeed = () => {
                         }}>
                           <Button
                             onClick={() => handleLike(post.id)}
-                            onTouchStart={handleTouchStart}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: likedPosts.has(post.id) ? '#E4405F' : COLORS.accentBrown,
@@ -649,7 +626,6 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(228, 64, 95, 0.1)' },
-                              '&:active': { transform: 'scale(0.95)' },
                               minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
@@ -657,9 +633,6 @@ const PostFeed = () => {
                           </Button>
                           <Button
                             onClick={() => toggleComments(post.id)}
-                            onTouchStart={handleTouchStart}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: COLORS.accentBrown,
@@ -667,7 +640,6 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(179, 229, 252, 0.1)' },
-                              '&:active': { transform: 'scale(0.95)' },
                               minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
@@ -675,9 +647,6 @@ const PostFeed = () => {
                           </Button>
                           <Button
                             onClick={() => handleShare(post)}
-                            onTouchStart={handleTouchStart}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchCancel={handleTouchCancel}
                             fullWidth={isMobile}
                             sx={{ 
                               color: COLORS.accentBrown,
@@ -685,7 +654,6 @@ const PostFeed = () => {
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
                               '&:hover': { background: 'rgba(168, 230, 207, 0.1)' },
-                              '&:active': { transform: 'scale(0.95)' },
                               minHeight: { xs: '44px', sm: '36px' }
                             }}
                           >
@@ -698,100 +666,63 @@ const PostFeed = () => {
                           <Box sx={{ 
                             mt: 2, 
                             pt: 2, 
-                            borderTop: `1px solid ${COLORS.background}`, 
                             px: { xs: 1.5, sm: 2 }, 
-                            pb: 2 
+                            borderTop: `1px solid ${COLORS.background}` 
                           }}>
-                            {/* Add Comment */}
-                            <Box sx={{ 
-                              display: 'flex', 
-                              flexDirection: { xs: 'column', sm: 'row' },
-                              gap: { xs: 1, sm: 1 }, 
-                              mb: 2 
-                            }}>
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                               <TextField
-                                size={isMobile ? "small" : "medium"}
-                                placeholder="Add a comment..."
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Add a comment..."
+                                size="small"
+                                fullWidth
                                 sx={{ 
-                                  flex: 1, 
-                                  '& .MuiOutlinedInput-root': { borderRadius: 2 },
-                                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                                  '& .MuiOutlinedInput-root': { 
+                                    borderRadius: 2,
+                                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                                  } 
                                 }}
                               />
                               <Button
                                 onClick={() => handleComment(post.id)}
-                                onTouchStart={handleTouchStart}
-                                onTouchEnd={handleTouchEnd}
-                                onTouchCancel={handleTouchCancel}
-                                disabled={!newComment.trim()}
-                                fullWidth={isMobile}
+                                variant="contained"
+                                size="small"
                                 sx={{ 
                                   background: COLORS.instagram,
-                                  color: '#fff',
+                                  minWidth: 'auto',
+                                  px: 2,
                                   borderRadius: 2,
                                   fontSize: { xs: '0.875rem', sm: '1rem' },
-                                  '&:hover': { background: '#C13584' },
-                                  '&:disabled': { background: COLORS.accentBrown },
-                                  '&:active': { transform: 'scale(0.95)' },
-                                  minHeight: { xs: '44px', sm: '36px' }
+                                  minHeight: { xs: '40px', sm: '32px' }
                                 }}
                               >
                                 Post
                               </Button>
                             </Box>
-
-                            {/* Display Comments */}
-                            <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
-                              {comments[post.id]?.filter(comment => {
-                                // Validate comment structure
-                                if (!comment || typeof comment !== 'object') return false;
-                                if (!comment.author || typeof comment.author !== 'string') return false;
-                                if (!comment.text || typeof comment.text !== 'string') return false;
-                                return true;
-                              }).map((comment, index) => (
-                                <Box key={index} sx={{ 
-                                  mb: 1, 
-                                  p: { xs: 0.75, sm: 1 }, 
-                                  background: 'rgba(0,0,0,0.02)', 
-                                  borderRadius: 1 
+                            {comments[post.id]?.map((comment, idx) => (
+                              <Box key={idx} sx={{ 
+                                p: 1, 
+                                mb: 1, 
+                                background: COLORS.background, 
+                                borderRadius: 2,
+                                border: `1px solid ${COLORS.accentBlue}` 
+                              }}>
+                                <Typography sx={{ 
+                                  fontWeight: 600, 
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  color: COLORS.black,
+                                  mb: 0.5
                                 }}>
-                                  <Typography 
-                                    variant="caption" 
-                                    sx={{ 
-                                      fontWeight: 600, 
-                                      color: COLORS.black,
-                                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                    }}
-                                  >
-                                    {comment.author || 'Anonymous'}
-                                  </Typography>
-                                  <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                      color: COLORS.black,
-                                      fontSize: { xs: '0.875rem', sm: '1rem' },
-                                      lineHeight: 1.4
-                                    }}
-                                  >
-                                    {comment.text || 'No comment text'}
-                                  </Typography>
-                                </Box>
-                              ))}
-                              {(!comments[post.id] || comments[post.id].length === 0) && (
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    color: COLORS.accentBrown, 
-                                    fontStyle: 'italic',
-                                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                  }}
-                                >
-                                  No comments yet. Be the first to comment!
+                                  {comment.author}
                                 </Typography>
-                              )}
-                            </Box>
+                                <Typography sx={{ 
+                                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                  color: COLORS.black 
+                                }}>
+                                  {comment.text}
+                                </Typography>
+                              </Box>
+                            ))}
                           </Box>
                         )}
                       </CardContent>
@@ -805,87 +736,15 @@ const PostFeed = () => {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={openDeleteDialog} 
-        onClose={handleCancelDelete}
-        fullWidth
-        maxWidth={isMobile ? "xs" : "sm"}
-        PaperProps={{
-          sx: {
-            borderRadius: { xs: 2, sm: 3 },
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            mx: { xs: 2, sm: 0 }
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: COLORS.instagram, 
-          color: '#fff',
-          borderTopLeftRadius: { xs: 8, sm: 12 },
-          borderTopRightRadius: { xs: 8, sm: 12 },
-          fontSize: { xs: '1rem', sm: '1.125rem' },
-          fontWeight: 700
-        }}>
-          🗑️ Delete Post
-        </DialogTitle>
-        <DialogContent sx={{ p: { xs: 2, sm: 3 }, background: COLORS.background }}>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: COLORS.black, 
-              mb: 2,
-              fontSize: { xs: '0.875rem', sm: '1rem' }
-            }}
-          >
-            Are you sure you want to delete this post?
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: COLORS.accentBrown,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' }
-            }}
-          >
-            This action cannot be undone and the post will be permanently removed.
-          </Typography>
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this post? This action cannot be undone.
         </DialogContent>
-        <DialogActions sx={{ 
-          p: { xs: 2, sm: 3 }, 
-          background: COLORS.background, 
-          borderBottomLeftRadius: { xs: 8, sm: 12 }, 
-          borderBottomRightRadius: { xs: 8, sm: 12 } 
-        }}>
-          <Button 
-            onClick={handleCancelDelete}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchCancel}
-            sx={{ 
-              color: COLORS.accentBrown,
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              '&:hover': { background: 'rgba(179, 229, 252, 0.1)' },
-              '&:active': { transform: 'scale(0.95)' },
-              minHeight: { xs: '44px', sm: '36px' }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={confirmDeletePost}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchCancel}
-            sx={{ 
-              background: '#E4405F',
-              color: '#fff',
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              '&:hover': { background: '#C13584' },
-              '&:active': { transform: 'scale(0.95)' },
-              minHeight: { xs: '44px', sm: '36px' }
-            }}
-            variant="contained"
-          >
-            Delete Post
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button onClick={confirmDeletePost} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

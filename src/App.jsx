@@ -89,6 +89,8 @@ function App() {
   const handleLogout = () => setUser(null);
   
   const handleLoginClick = () => {
+    console.log('🎯 handleLoginClick called!');
+    console.log('Setting showLoginModal to true');
     setShowLoginModal(true);
   };
 
@@ -353,6 +355,14 @@ function App() {
             >
               <AuthForm 
                 onAuth={handleAuth} 
+                onSignup={(email, password, role) => {
+                  console.log('Signup called:', { email, password, role });
+                  // Handle signup logic here
+                }}
+                onLogin={(email, password) => {
+                  console.log('Login called:', { email, password });
+                  // Handle login logic here
+                }}
                 initialMode={selectedRole}
                 onModeChange={setSelectedRole}
               />

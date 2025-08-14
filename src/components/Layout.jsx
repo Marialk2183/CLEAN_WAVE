@@ -473,6 +473,10 @@ const Layout = ({ children, user, onLoginClick }) => {
                           setDrawerOpen(false);
                           if (link.isDonate) {
                             handleDonate();
+                          } else if (link.isLogin && onLoginClick) {
+                            console.log('🎯 Layout: Login button clicked in mobile drawer!');
+                            console.log('Calling onLoginClick...');
+                            onLoginClick();
                           } else {
                             handleNavClick(link.href);
                           }

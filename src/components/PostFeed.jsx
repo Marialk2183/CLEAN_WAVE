@@ -61,6 +61,21 @@ const PostFeed = () => {
     return () => unsubscribe();
   }, []);
 
+  // Initialize likedPosts state when user or posts change
+  useEffect(() => {
+    if (currentUser && posts.length > 0) {
+      const userLikedPosts = new Set();
+      posts.forEach(post => {
+        if (post.likes && post.likes.some(like => like.userId === currentUser.uid)) {
+          userLikedPosts.add(post.id);
+        }
+      });
+      setLikedPosts(userLikedPosts);
+    } else if (!currentUser) {
+      setLikedPosts(new Set());
+    }
+  }, [currentUser, posts]);
+
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -185,16 +200,77 @@ const PostFeed = () => {
   };
 
   // Handle like functionality
-  const handleLike = (postId) => {
-    setLikedPosts(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(postId)) {
-        newLiked.delete(postId);
-      } else {
-        newLiked.add(postId);
+  const handleLike = async (postId) => {
+    try {
+      if (!currentUser) {
+        setError('Please log in to like posts.');
+        return;
       }
-      return newLiked;
-    });
+
+      const postRef = doc(db, "posts", postId);
+      const postDoc = await getDoc(postRef);
+      
+      if (postDoc.exists()) {
+        const postData = postDoc.data();
+        const currentLikes = postData.likes || [];
+        const userId = currentUser.uid;
+        
+        // Check if user already liked the post
+        const userLiked = currentLikes.some(like => like.userId === userId);
+        
+        let updatedLikes;
+        if (userLiked) {
+          // Unlike: remove user's like
+          updatedLikes = currentLikes.filter(like => like.userId !== userId);
+        } else {
+          // Like: add user's like
+          updatedLikes = [...currentLikes, {
+            userId: userId,
+            userEmail: currentUser.email,
+            timestamp: serverTimestamp()
+          }];
+        }
+        
+        // Update the post with new likes
+        await updateDoc(postRef, {
+          likes: updatedLikes
+        });
+
+        // Update local state
+        setLikedPosts(prev => {
+          const newLiked = new Set(prev);
+          if (userLiked) {
+            newLiked.delete(postId);
+          } else {
+            newLiked.add(postId);
+          }
+          return newLiked;
+        });
+
+        // Update posts state to reflect the like change
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, likes: updatedLikes }
+            : post
+        ));
+
+        console.log(userLiked ? 'Post unliked' : 'Post liked');
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+      setError('Failed to update like. Please try again.');
+    }
+  };
+
+  // Check if current user has liked a post
+  const hasUserLiked = (post) => {
+    if (!currentUser || !post.likes) return false;
+    return post.likes.some(like => like.userId === currentUser.uid);
+  };
+
+  // Get like count for a post
+  const getLikeCount = (post) => {
+    return post.likes ? post.likes.length : 0;
   };
 
   // Handle comment functionality
@@ -208,7 +284,8 @@ const PostFeed = () => {
         author: currentUser?.displayName || currentUser?.email || 'Anonymous',
         timestamp: serverTimestamp(),
         userId: currentUser?.uid || null,
-        userEmail: currentUser?.email || null
+        userEmail: currentUser?.email || null,
+        commentId: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Unique comment ID
       };
 
       // Add comment to the post in Firestore
@@ -243,6 +320,42 @@ const PostFeed = () => {
     } catch (error) {
       console.error('Error adding comment:', error);
       setError('Failed to add comment. Please try again.');
+    }
+  };
+
+  // Delete comment functionality
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      const postRef = doc(db, "posts", postId);
+      const postDoc = await getDoc(postRef);
+      
+      if (postDoc.exists()) {
+        const currentComments = postDoc.data().comments || [];
+        const updatedComments = currentComments.filter(comment => comment.commentId !== commentId);
+        
+        // Update the post with comment removed
+        await updateDoc(postRef, {
+          comments: updatedComments
+        });
+
+        // Update local state
+        setComments(prev => ({
+          ...prev,
+          [postId]: updatedComments
+        }));
+
+        // Update posts state to reflect the comment removal
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, comments: updatedComments }
+            : post
+        ));
+
+        console.log('Comment deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setError('Failed to delete comment. Please try again.');
     }
   };
 
@@ -684,12 +797,15 @@ const PostFeed = () => {
                           <Button
                             onClick={() => handleLike(post.id)}
                             fullWidth={isMobile}
+                            disabled={!currentUser}
                             sx={{ 
-                              color: likedPosts.has(post.id) ? '#E4405F' : COLORS.accentBrown,
+                              color: hasUserLiked(post) ? '#E4405F' : COLORS.accentBrown,
                               minWidth: 'auto',
                               p: { xs: 0.75, sm: 1 },
                               fontSize: { xs: '0.875rem', sm: '1rem' },
-                              '&:hover': { background: 'rgba(228, 64, 95, 0.1)' },
+                              '&:hover': { 
+                                background: hasUserLiked(post) ? 'rgba(228, 64, 95, 0.1)' : 'rgba(228, 64, 95, 0.1)' 
+                              },
                               minHeight: { xs: '48px', sm: '36px' },
                               // Mobile touch optimizations
                               touchAction: 'manipulation',
@@ -701,10 +817,14 @@ const PostFeed = () => {
                               '&:active': {
                                 transform: 'scale(0.95)',
                                 transition: 'transform 0.1s ease'
+                              },
+                              '&:disabled': {
+                                color: '#cccccc',
+                                cursor: 'not-allowed'
                               }
                             }}
                           >
-                            {likedPosts.has(post.id) ? '❤️' : '🤍'} Like
+                            {hasUserLiked(post) ? '❤️' : '🤍'} Like ({getLikeCount(post)})
                           </Button>
                           
                           <Button
@@ -774,46 +894,68 @@ const PostFeed = () => {
                               gap: { xs: 1, sm: 1 }, 
                               mb: 2 
                             }}>
-                              <TextField
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Add a comment..."
-                                size="small"
-                                fullWidth
-                                sx={{ 
-                                  '& .MuiOutlinedInput-root': { 
-                                    borderRadius: { xs: 2, sm: 2 },
-                                    fontSize: { xs: '0.875rem', sm: '1rem' },
-                                    minHeight: { xs: '48px', sm: '40px' }
-                                  } 
-                                }}
-                              />
-                              <Button
-                                onClick={() => handleComment(post.id)}
-                                variant="contained"
-                                size="small"
-                                fullWidth={isMobile}
-                                sx={{ 
-                                  background: COLORS.instagram,
-                                  minWidth: 'auto',
-                                  px: { xs: 3, sm: 2 },
-                                  borderRadius: { xs: 2, sm: 2 },
-                                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                                  minHeight: { xs: '48px', sm: '32px' },
-                                  fontWeight: 600,
-                                  // Mobile touch optimizations
-                                  touchAction: 'manipulation',
-                                  WebkitTapHighlightColor: 'transparent',
-                                  userSelect: 'none',
-                                  // Enhanced mobile styling
-                                  '&:active': {
-                                    transform: 'scale(0.95)',
-                                    transition: 'transform 0.1s ease'
-                                  }
-                                }}
-                              >
-                                💬 Post Comment
-                              </Button>
+                              {currentUser ? (
+                                <>
+                                  <TextField
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Add a comment..."
+                                    size="small"
+                                    fullWidth
+                                    sx={{ 
+                                      '& .MuiOutlinedInput-root': { 
+                                        borderRadius: { xs: 2, sm: 2 },
+                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                        minHeight: { xs: '48px', sm: '40px' }
+                                      } 
+                                    }}
+                                  />
+                                  <Button
+                                    onClick={() => handleComment(post.id)}
+                                    variant="contained"
+                                    size="small"
+                                    fullWidth={isMobile}
+                                    disabled={!newComment.trim()}
+                                    sx={{ 
+                                      background: COLORS.instagram,
+                                      minWidth: 'auto',
+                                      px: { xs: 3, sm: 2 },
+                                      borderRadius: { xs: 2, sm: 2 },
+                                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                                      minHeight: { xs: '48px', sm: '32px' },
+                                      fontWeight: 600,
+                                      // Mobile touch optimizations
+                                      touchAction: 'manipulation',
+                                      WebkitTapHighlightColor: 'transparent',
+                                      userSelect: 'none',
+                                      // Enhanced mobile styling
+                                      '&:active': {
+                                        transform: 'scale(0.95)',
+                                        transition: 'transform 0.1s ease'
+                                      },
+                                      '&:disabled': {
+                                        background: '#cccccc',
+                                        color: '#666666'
+                                      }
+                                    }}
+                                  >
+                                    💬 Post Comment
+                                  </Button>
+                                </>
+                              ) : (
+                                <Box sx={{ 
+                                  p: 2, 
+                                  textAlign: 'center',
+                                  background: 'rgba(179, 229, 252, 0.1)',
+                                  borderRadius: 2,
+                                  border: '1px solid #B3E5FC',
+                                  color: '#1565c0',
+                                  fontSize: { xs: '0.875rem', sm: '0.75rem' },
+                                  fontStyle: 'italic'
+                                }}>
+                                  🔐 Please log in to add comments
+                                </Box>
+                              )}
                             </Box>
                             
                             {/* Comments List */}
@@ -831,40 +973,77 @@ const PostFeed = () => {
                                   borderRadius: { xs: 2, sm: 2 },
                                   border: `1px solid ${COLORS.accentBlue}`,
                                   // Mobile touch optimizations
-                                  touchAction: 'manipulation'
+                                  touchAction: 'manipulation',
+                                  position: 'relative'
                                 }}>
+                                  {/* Comment Header with Author, Timestamp, and Delete Button */}
                                   <Box sx={{ 
                                     display: 'flex', 
                                     justifyContent: 'space-between', 
                                     alignItems: 'center',
                                     mb: 0.5
                                   }}>
-                                    <Typography sx={{ 
-                                      fontWeight: 600, 
-                                      fontSize: { xs: '0.8rem', sm: '0.75rem' },
-                                      color: COLORS.black
-                                    }}>
-                                      👤 {comment.author || 'Anonymous'}
-                                    </Typography>
-                                    {comment.timestamp && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                       <Typography sx={{ 
-                                        fontSize: { xs: '0.7rem', sm: '0.65rem' },
-                                        color: COLORS.accentBrown,
-                                        fontStyle: 'italic'
+                                        fontWeight: 600, 
+                                        fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                                        color: COLORS.black
                                       }}>
-                                        {comment.timestamp?.seconds ? 
-                                          new Date(comment.timestamp.seconds * 1000).toLocaleDateString() :
-                                          comment.timestamp?.toDate ? 
-                                            comment.timestamp.toDate().toLocaleDateString() :
-                                            'Just now'
-                                        }
+                                        👤 {comment.author || 'Anonymous'}
                                       </Typography>
+                                      {comment.timestamp && (
+                                        <Typography sx={{ 
+                                          fontSize: { xs: '0.7rem', sm: '0.65rem' },
+                                          color: COLORS.accentBrown,
+                                          fontStyle: 'italic'
+                                        }}>
+                                          {comment.timestamp?.seconds ? 
+                                            new Date(comment.timestamp.seconds * 1000).toLocaleDateString() :
+                                            comment.timestamp?.toDate ? 
+                                              comment.timestamp.toDate().toLocaleDateString() :
+                                              'Just now'
+                                          }
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                    
+                                    {/* Delete Button - Only show for comment owner or admin */}
+                                    {(currentUser && (comment.userId === currentUser.uid || currentUser.email === 'admin@cleanwave.com')) && (
+                                      <Button
+                                        onClick={() => handleDeleteComment(post.id, comment.commentId)}
+                                        size="small"
+                                        sx={{
+                                          minWidth: 'auto',
+                                          minHeight: { xs: '32px', sm: '28px' },
+                                          width: { xs: '32px', sm: '28px' },
+                                          height: { xs: '32px', sm: '28px' },
+                                          borderRadius: '50%',
+                                          p: 0,
+                                          background: 'rgba(228, 64, 95, 0.1)',
+                                          color: '#E4405F',
+                                          border: '1px solid #E4405F',
+                                          '&:hover': {
+                                            background: 'rgba(228, 64, 95, 0.2)',
+                                            transform: 'scale(1.05)'
+                                          },
+                                          fontSize: { xs: '12px', sm: '10px' },
+                                          // Mobile touch optimizations
+                                          touchAction: 'manipulation',
+                                          WebkitTapHighlightColor: 'transparent',
+                                          userSelect: 'none'
+                                        }}
+                                      >
+                                        ✕
+                                      </Button>
                                     )}
                                   </Box>
+                                  
+                                  {/* Comment Text */}
                                   <Typography sx={{ 
                                     fontSize: { xs: '0.875rem', sm: '0.75rem' },
                                     color: COLORS.black,
-                                    lineHeight: 1.4
+                                    lineHeight: 1.4,
+                                    pr: (currentUser && (comment.userId === currentUser.uid || currentUser.email === 'admin@cleanwave.com')) ? 4 : 0
                                   }}>
                                     {comment.text}
                                   </Typography>

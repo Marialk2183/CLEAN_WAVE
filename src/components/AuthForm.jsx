@@ -202,112 +202,38 @@ const AuthForm = ({ onAuth, onSignup, onLogin, initialMode = "login", onModeChan
             ✕
           </button>
           
-          {/* Title Section */}
+          {/* Header */}
           <div style={{
-            marginBottom: isMobile ? '24px' : '32px',
             textAlign: 'center',
-            position: 'relative'
+            marginBottom: isMobile ? '24px' : '32px'
           }}>
             <h1 style={{
+              color: '#2E7D32',
+              fontSize: isMobile ? '1.5rem' : '2rem',
               fontWeight: 700,
-              color: '#111',
-              marginBottom: '8px',
-              textAlign: 'center',
-              letterSpacing: '0.5px',
-              fontSize: isMobile ? '1.5rem' : '1.75rem',
-              margin: '0 0 8px 0'
+              margin: 0,
+              marginBottom: isMobile ? '8px' : '12px'
             }}>
-              {mode === 'login' ? 'Welcome Back' : 
-               mode === 'volunteer' ? 'Volunteer Login' : 
-               mode === 'ngo' ? 'NGO Login' : 
-               mode === 'volunteer-signup' ? 'Join as Volunteer' : 
-               mode === 'ngo-signup' ? 'Join as NGO' : 
-               mode === 'admin' ? 'Admin Access' : 'Welcome Back'}
+              {mode === 'login' ? '🔐 Login' : 
+               mode === 'volunteer' ? '👥 Volunteer Login' :
+               mode === 'ngo' ? '🏢 NGO Login' :
+               mode === 'volunteer-signup' ? '👥 Volunteer Signup' :
+               mode === 'ngo-signup' ? '🏢 NGO Signup' :
+               mode === 'admin' ? '👑 Admin Login' : '🔐 Auth'}
             </h1>
             <p style={{
               color: '#666',
               fontSize: isMobile ? '0.8rem' : '0.9rem',
-              fontWeight: 500,
-              margin: '0'
+              margin: 0,
+              lineHeight: 1.4
             }}>
-              {mode === 'login' ? 'Sign in to your account' : 
-               mode === 'volunteer' ? 'Access volunteer features' : 
-               mode === 'ngo' ? 'Access NGO dashboard' : 
-               mode === 'volunteer-signup' ? 'Start making a difference' : 
-               mode === 'ngo-signup' ? 'Partner with us' : 
-               mode === 'admin' ? 'Access admin panel' : 'Sign in to your account'}
+              {mode === 'login' ? 'Welcome back! Please sign in to your account.' :
+               mode === 'volunteer' ? 'Volunteer login portal. Access your volunteer dashboard.' :
+               mode === 'ngo' ? 'NGO login portal. Access your organization dashboard.' :
+               mode === 'volunteer-signup' ? 'Join our volunteer community! Create your account.' :
+               mode === 'ngo-signup' ? 'Register your NGO organization with us.' :
+               mode === 'admin' ? 'Administrator access portal.' : 'Authentication required.'}
             </p>
-            
-            {/* Debug Buttons */}
-            <div style={{ 
-              marginTop: isMobile ? '12px' : '16px'
-            }}>
-              <button
-                onClick={() => {
-                  console.log('🧪 Debug button clicked');
-                  console.log('Current mode:', mode);
-                  console.log('Touch events supported:', 'ontouchstart' in window);
-                  alert('Debug: Touch events working! Mode: ' + mode);
-                }}
-                style={{
-                  background: 'transparent',
-                  color: '#B3E5FC',
-                  border: '2px solid #B3E5FC',
-                  borderRadius: '8px',
-                  padding: isMobile ? '8px 12px' : '12px 16px',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginRight: isMobile ? '6px' : '8px',
-                  minHeight: isMobile ? '40px' : '44px',
-                  minWidth: isMobile ? '40px' : '44px'
-                }}
-              >
-                🧪 Test Touch
-              </button>
-              
-              <button
-                onClick={() => alert('Simple button works!')}
-                style={{
-                  background: '#E4405F',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: isMobile ? '8px 12px' : '12px 16px',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginRight: isMobile ? '6px' : '8px',
-                  minHeight: isMobile ? '40px' : '44px',
-                  minWidth: isMobile ? '40px' : '44px'
-                }}
-              >
-                🔴 Simple Test
-              </button>
-              
-              <button
-                onClick={() => {
-                  console.log('Form test button clicked');
-                  console.log('Form state:', form);
-                  console.log('Current mode:', mode);
-                  alert('Form test: Mode=' + mode + ', Email=' + form.email);
-                }}
-                style={{
-                  background: '#4CAF50',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: isMobile ? '8px 12px' : '12px 16px',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  minHeight: isMobile ? '40px' : '44px',
-                  minWidth: isMobile ? '40px' : '44px'
-                }}
-              >
-                🟢 Form Test
-              </button>
-            </div>
           </div>
           
           {/* Tabs */}

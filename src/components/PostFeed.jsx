@@ -79,7 +79,7 @@ const PostFeed = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        setLoading(true);
+      setLoading(true);
         setError('');
         
         // Create a query with proper ordering and limits
@@ -90,12 +90,18 @@ const PostFeed = () => {
         );
         
         const querySnapshot = await getDocs(postsQuery);
-        const fetched = querySnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        }));
+        const fetched = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id, 
+            ...data,
+            // Ensure likes and comments are always arrays
+            likes: data.likes || [],
+            comments: data.comments || []
+          };
+        });
         
-        console.log('Fetched posts:', fetched);
+        console.log('Fetched posts with likes and comments:', fetched);
         setPosts(fetched);
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -106,12 +112,39 @@ const PostFeed = () => {
           setError('Access denied. Please make sure you are logged in.');
         }
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
 
     fetchPosts();
   }, []);
+
+  // Refresh posts to get latest data
+  const refreshPosts = async () => {
+    try {
+      const postsQuery = query(
+        collection(db, "posts"),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+      
+      const querySnapshot = await getDocs(postsQuery);
+      const fetched = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id, 
+          ...data,
+          likes: data.likes || [],
+          comments: data.comments || []
+        };
+      });
+      
+      setPosts(fetched);
+      console.log('Posts refreshed with latest data');
+    } catch (error) {
+      console.error('Error refreshing posts:', error);
+    }
+  };
 
   // Add a new post with image (Cloudinary)
   const handleAddPost = async (e) => {
@@ -123,27 +156,27 @@ const PostFeed = () => {
     }
 
     try {
-      setLoading(true);
+    setLoading(true);
       setError('');
       
-      let imageUrl = '';
-      if (image) {
-        const formData = new FormData();
-        formData.append("file", image);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    let imageUrl = '';
+    if (image) {
+      const formData = new FormData();
+      formData.append("file", image);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
         
-        const response = await fetch(CLOUDINARY_URL, {
-          method: "POST",
-          body: formData
-        });
+      const response = await fetch(CLOUDINARY_URL, {
+        method: "POST",
+        body: formData
+      });
         
         if (!response.ok) {
           throw new Error('Failed to upload image');
         }
         
-        const data = await response.json();
-        imageUrl = data.secure_url;
-      }
+      const data = await response.json();
+      imageUrl = data.secure_url;
+    }
 
       // Add post to Firestore
       const postData = {
@@ -151,9 +184,9 @@ const PostFeed = () => {
         content: content.trim(),
         location: location.trim() || null,
         imageUrl: imageUrl || null,
-        timestamp: serverTimestamp(),
-        likes: 0,
-        comments: [],
+      timestamp: serverTimestamp(),
+        likes: [], // Initialize as empty array for likes
+        comments: [], // Initialize as empty array for comments
         userId: currentUser?.uid || null,
         userEmail: currentUser?.email || null,
         createdAt: new Date().toISOString()
@@ -179,10 +212,10 @@ const PostFeed = () => {
       }));
       
       setPosts(fetched);
-      setAuthor('');
-      setContent('');
-      setLocation('');
-      setImage(null);
+    setAuthor('');
+    setContent('');
+    setLocation('');
+    setImage(null);
       
     } catch (error) {
       console.error('Error adding post:', error);
@@ -195,57 +228,78 @@ const PostFeed = () => {
         setError(`Failed to create post: ${error.message}. Please try again.`);
       }
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
   };
 
   // Handle like functionality
   const handleLike = async (postId) => {
+    console.log('=== LIKE FUNCTION STARTED ===');
+    console.log('handleComment called with postId:', postId);
+    console.log('currentUser:', currentUser);
+    console.log('currentUser.uid:', currentUser?.uid);
+    
     try {
       if (!currentUser) {
+        console.log('No current user, returning');
         setError('Please log in to like posts.');
         return;
       }
 
+      console.log('Getting post reference for:', postId);
       const postRef = doc(db, "posts", postId);
+      console.log('Post reference created:', postRef);
+      
       const postDoc = await getDoc(postRef);
+      console.log('Post document fetched, exists:', postDoc.exists());
       
       if (postDoc.exists()) {
         const postData = postDoc.data();
+        console.log('Post data:', postData);
+        
         const currentLikes = postData.likes || [];
+        console.log('Current likes array:', currentLikes);
+        
         const userId = currentUser.uid;
+        console.log('Current user ID:', userId);
         
         // Check if user already liked the post
         const userLiked = currentLikes.some(like => like.userId === userId);
+        console.log('User already liked:', userLiked);
         
         let updatedLikes;
         if (userLiked) {
           // Unlike: remove user's like
           updatedLikes = currentLikes.filter(like => like.userId !== userId);
+          console.log('Removing like, new likes array:', updatedLikes);
         } else {
           // Like: add user's like
           updatedLikes = [...currentLikes, {
             userId: userId,
             userEmail: currentUser.email,
-            timestamp: serverTimestamp()
+            timestamp: new Date() // Use regular Date instead of serverTimestamp()
           }];
+          console.log('Adding like, new likes array:', updatedLikes);
         }
         
+        console.log('Updating post in Firestore...');
         // Update the post with new likes
         await updateDoc(postRef, {
           likes: updatedLikes
         });
+        console.log('Post updated in Firestore successfully');
 
         // Update local state
-        setLikedPosts(prev => {
-          const newLiked = new Set(prev);
+    setLikedPosts(prev => {
+      const newLiked = new Set(prev);
           if (userLiked) {
-            newLiked.delete(postId);
-          } else {
-            newLiked.add(postId);
-          }
-          return newLiked;
-        });
+        newLiked.delete(postId);
+      } else {
+        newLiked.add(postId);
+      }
+          console.log('Updated likedPosts set:', newLiked);
+      return newLiked;
+    });
 
         // Update posts state to reflect the like change
         setPosts(prev => prev.map(post => 
@@ -254,10 +308,21 @@ const PostFeed = () => {
             : post
         ));
 
-        console.log(userLiked ? 'Post unliked' : 'Post liked');
+        // Refresh posts to ensure data consistency
+        console.log('Refreshing posts...');
+        await refreshPosts();
+        console.log('Posts refreshed');
+
+        console.log(userLiked ? 'Post unliked successfully' : 'Post liked successfully');
+        console.log('=== LIKE FUNCTION COMPLETED ===');
+      } else {
+        console.log('Post document does not exist');
+        setError('Post not found. Please try again.');
       }
     } catch (error) {
+      console.error('=== LIKE FUNCTION ERROR ===');
       console.error('Error handling like:', error);
+      console.error('Error details:', error.message, error.code);
       setError('Failed to update like. Please try again.');
     }
   };
@@ -275,9 +340,11 @@ const PostFeed = () => {
 
   // Handle comment functionality
   const handleComment = async (postId) => {
+    console.log('=== COMMENT FUNCTION STARTED ===');
     console.log('handleComment called with postId:', postId);
     console.log('newComment value:', newComment);
     console.log('currentUser:', currentUser);
+    console.log('currentUser.uid:', currentUser?.uid);
     
     if (!newComment.trim()) {
       console.log('Comment is empty, returning');
@@ -297,7 +364,7 @@ const PostFeed = () => {
       const commentData = {
         text: newComment.trim(),
         author: currentUser?.displayName || currentUser?.email || 'Anonymous',
-        timestamp: serverTimestamp(),
+        timestamp: new Date(), // Use regular Date instead of serverTimestamp()
         userId: currentUser?.uid || null,
         userEmail: currentUser?.email || null,
         commentId: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Unique comment ID
@@ -310,24 +377,25 @@ const PostFeed = () => {
       console.log('Post reference created:', postRef);
       
       const postDoc = await getDoc(postRef);
-      console.log('Post document fetched:', postDoc.exists());
+      console.log('Post document fetched, exists:', postDoc.exists());
       
       if (postDoc.exists()) {
         const currentComments = postDoc.data().comments || [];
-        console.log('Current comments:', currentComments);
+        console.log('Current comments array:', currentComments);
         
         const updatedComments = [...currentComments, commentData];
         console.log('Updated comments array:', updatedComments);
         
+        console.log('Updating post in Firestore...');
         // Update the post with new comment
         await updateDoc(postRef, {
           comments: updatedComments
         });
-        console.log('Post updated in Firestore');
+        console.log('Post updated in Firestore successfully');
 
         // Update local state
-        setComments(prev => ({
-          ...prev,
+    setComments(prev => ({
+      ...prev,
           [postId]: updatedComments
         }));
         console.log('Local comments state updated');
@@ -338,17 +406,24 @@ const PostFeed = () => {
             ? { ...post, comments: updatedComments }
             : post
         ));
-        console.log('Posts state updated');
 
-        setNewComment('');
+        // Refresh posts to ensure data consistency
+        console.log('Refreshing posts...');
+        await refreshPosts();
+        console.log('Posts refreshed');
+
+    setNewComment('');
         console.log('Comment input cleared');
         console.log('Comment added successfully:', commentData);
+        console.log('=== COMMENT FUNCTION COMPLETED ===');
       } else {
         console.log('Post document does not exist');
         setError('Post not found. Please try again.');
       }
     } catch (error) {
+      console.error('=== COMMENT FUNCTION ERROR ===');
       console.error('Error adding comment:', error);
+      console.error('Error details:', error.message, error.code);
       setError('Failed to add comment. Please try again.');
     }
   };
@@ -380,6 +455,9 @@ const PostFeed = () => {
             ? { ...post, comments: updatedComments }
             : post
         ));
+
+        // Refresh posts to ensure data consistency
+        await refreshPosts();
 
         console.log('Comment deleted successfully');
       }
@@ -433,8 +511,8 @@ const PostFeed = () => {
         return;
       }
       
-      setPostToDelete(postId);
-      setOpenDeleteDialog(true);
+    setPostToDelete(postId);
+    setOpenDeleteDialog(true);
     } catch (error) {
       console.error('Error preparing to delete post:', error);
       setError('Failed to delete post. Please try again.');
@@ -448,11 +526,11 @@ const PostFeed = () => {
     try {
       setError('');
       await deleteDoc(doc(db, "posts", postToDelete));
-      
+
       // Update local state
       setPosts(prev => prev.filter(post => post.id !== postToDelete));
-      setOpenDeleteDialog(false);
-      setPostToDelete(null);
+    setOpenDeleteDialog(false);
+    setPostToDelete(null);
       
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -467,13 +545,13 @@ const PostFeed = () => {
   // Handle share functionality
   const handleShare = (post) => {
     try {
-      if (navigator.share) {
+    if (navigator.share) {
         navigator.share({
           title: `Post by ${post.author}`,
           text: post.content,
           url: window.location.href
         });
-      } else {
+    } else {
         // Fallback for browsers that don't support Web Share API
         navigator.clipboard.writeText(post.content);
         alert('Post content copied to clipboard!');
@@ -487,9 +565,9 @@ const PostFeed = () => {
 
   return (
     <Box sx={{ 
-      width: '100%', 
+        width: '100%',
       maxWidth: '1200px', 
-      mx: 'auto', 
+        mx: 'auto',
       px: { xs: 2, sm: 3, md: 4 },
       py: { xs: 3, sm: 4, md: 5 }
     }}>
@@ -527,6 +605,29 @@ const PostFeed = () => {
             }}>
               <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
                 ⚠️ {error}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Debug Info */}
+          {currentUser && (
+            <Box sx={{ 
+              mb: 3, 
+              p: 2, 
+              borderRadius: 2, 
+              background: '#e8f5e8', 
+              border: '1px solid #c8e6c9',
+              color: '#2e7d32',
+              fontSize: '0.8rem'
+            }}>
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 500, mb: 1 }}>
+                🐛 Debug Info
+              </Typography>
+              <Typography sx={{ fontSize: '0.7rem' }}>
+                User: {currentUser.email} | Posts: {posts.length} | Liked Posts: {likedPosts.size}
+              </Typography>
+              <Typography sx={{ fontSize: '0.7rem' }}>
+                Sample Post Likes: {posts[0]?.likes?.length || 0} | Sample Post Comments: {posts[0]?.comments?.length || 0}
               </Typography>
             </Box>
           )}
@@ -670,16 +771,16 @@ const PostFeed = () => {
                 justifyContent: 'space-between',
                 mb: { xs: 2, sm: 3 }
               }}>
-                <Typography 
-                  variant={isMobile ? "h6" : "h6"} 
-                  sx={{ 
-                    fontWeight: 700, 
-                    color: COLORS.instagram, 
-                    fontSize: { xs: '1.125rem', sm: '1.25rem' }
-                  }}
-                >
-                  Recent Posts
-                </Typography>
+              <Typography 
+                variant={isMobile ? "h6" : "h6"} 
+                sx={{ 
+                  fontWeight: 700, 
+                  color: COLORS.instagram, 
+                  fontSize: { xs: '1.125rem', sm: '1.25rem' }
+                }}
+              >
+                Recent Posts
+              </Typography>
               </Box>
               
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
@@ -751,7 +852,7 @@ const PostFeed = () => {
                           {/* Delete Button - Always show for post owners or admins */}
                           {(currentUser && (post.userId === currentUser.uid || currentUser.email === 'admin@cleanwave.com')) && (
                             <Button
-                              onClick={() => handleDeletePost(post.id)}
+                            onClick={() => handleDeletePost(post.id)}
                               variant="outlined"
                               size={isMobile ? "small" : "medium"}
                               sx={{ 
@@ -931,9 +1032,9 @@ const PostFeed = () => {
                                     handleComment(post.id);
                                   }
                                 }} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 1 }, width: '100%' }}>
-                                  <TextField
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
+                              <TextField
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
                                     onKeyPress={(e) => {
                                       if (e.key === 'Enter' && !e.shiftKey) {
                                         e.preventDefault();
@@ -945,26 +1046,26 @@ const PostFeed = () => {
                                     placeholder="Add a comment... (Press Enter to submit)"
                                     size="small"
                                     fullWidth
-                                    sx={{ 
+                                sx={{ 
                                       '& .MuiOutlinedInput-root': { 
                                         borderRadius: { xs: 2, sm: 2 },
                                         fontSize: { xs: '0.875rem', sm: '1rem' },
                                         minHeight: { xs: '48px', sm: '40px' }
                                       } 
-                                    }}
-                                  />
-                                  <Button
+                                }}
+                              />
+                              <Button
                                     type="submit"
                                     variant="contained"
                                     size="small"
-                                    fullWidth={isMobile}
+                                fullWidth={isMobile}
                                     disabled={!newComment.trim()}
-                                    sx={{ 
-                                      background: COLORS.instagram,
+                                sx={{ 
+                                  background: COLORS.instagram,
                                       minWidth: 'auto',
                                       px: { xs: 3, sm: 2 },
                                       borderRadius: { xs: 2, sm: 2 },
-                                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                                  fontSize: { xs: '0.875rem', sm: '1rem' },
                                       minHeight: { xs: '48px', sm: '32px' },
                                       fontWeight: 600,
                                       // Mobile touch optimizations
@@ -983,7 +1084,7 @@ const PostFeed = () => {
                                     }}
                                   >
                                     💬 Post Comment
-                                  </Button>
+                              </Button>
                                 </Box>
                               ) : (
                                 <Box sx={{ 
@@ -1000,7 +1101,7 @@ const PostFeed = () => {
                                 </Box>
                               )}
                             </Box>
-                            
+
                             {/* Comments List */}
                             <Box sx={{ 
                               maxHeight: { xs: '200px', sm: '300px' }, 
@@ -1028,12 +1129,12 @@ const PostFeed = () => {
                                   }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                       <Typography sx={{ 
-                                        fontWeight: 600, 
+                                      fontWeight: 600, 
                                         fontSize: { xs: '0.8rem', sm: '0.75rem' },
                                         color: COLORS.black
                                       }}>
                                         👤 {comment.author || 'Anonymous'}
-                                      </Typography>
+                                  </Typography>
                                       {comment.timestamp && (
                                         <Typography sx={{ 
                                           fontSize: { xs: '0.7rem', sm: '0.65rem' },
@@ -1055,7 +1156,7 @@ const PostFeed = () => {
                                       <Button
                                         onClick={() => handleDeleteComment(post.id, comment.commentId)}
                                         size="small"
-                                        sx={{
+                                    sx={{ 
                                           minWidth: 'auto',
                                           minHeight: { xs: '32px', sm: '28px' },
                                           width: { xs: '32px', sm: '28px' },
@@ -1099,8 +1200,8 @@ const PostFeed = () => {
                                 <Box sx={{ 
                                   p: 2, 
                                   textAlign: 'center',
-                                  color: COLORS.accentBrown,
-                                  fontStyle: 'italic',
+                                    color: COLORS.accentBrown, 
+                                    fontStyle: 'italic',
                                   fontSize: { xs: '0.875rem', sm: '0.75rem' }
                                 }}>
                                   💭 No comments yet. Be the first to comment!
@@ -1136,4 +1237,4 @@ const PostFeed = () => {
   );
 };
 
-export default PostFeed;
+export default PostFeed; 

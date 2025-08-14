@@ -275,9 +275,24 @@ const PostFeed = () => {
 
   // Handle comment functionality
   const handleComment = async (postId) => {
-    if (!newComment.trim()) return;
+    console.log('handleComment called with postId:', postId);
+    console.log('newComment value:', newComment);
+    console.log('currentUser:', currentUser);
+    
+    if (!newComment.trim()) {
+      console.log('Comment is empty, returning');
+      return;
+    }
+    
+    if (!currentUser) {
+      console.log('No current user, returning');
+      setError('Please log in to add comments.');
+      return;
+    }
     
     try {
+      console.log('Starting comment creation...');
+      
       // Create comment data
       const commentData = {
         text: newComment.trim(),
@@ -288,24 +303,34 @@ const PostFeed = () => {
         commentId: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Unique comment ID
       };
 
+      console.log('Comment data created:', commentData);
+
       // Add comment to the post in Firestore
       const postRef = doc(db, "posts", postId);
+      console.log('Post reference created:', postRef);
+      
       const postDoc = await getDoc(postRef);
+      console.log('Post document fetched:', postDoc.exists());
       
       if (postDoc.exists()) {
         const currentComments = postDoc.data().comments || [];
+        console.log('Current comments:', currentComments);
+        
         const updatedComments = [...currentComments, commentData];
+        console.log('Updated comments array:', updatedComments);
         
         // Update the post with new comment
         await updateDoc(postRef, {
           comments: updatedComments
         });
+        console.log('Post updated in Firestore');
 
         // Update local state
         setComments(prev => ({
           ...prev,
           [postId]: updatedComments
         }));
+        console.log('Local comments state updated');
 
         // Update posts state to reflect the new comment
         setPosts(prev => prev.map(post => 
@@ -313,9 +338,14 @@ const PostFeed = () => {
             ? { ...post, comments: updatedComments }
             : post
         ));
+        console.log('Posts state updated');
 
         setNewComment('');
+        console.log('Comment input cleared');
         console.log('Comment added successfully:', commentData);
+      } else {
+        console.log('Post document does not exist');
+        setError('Post not found. Please try again.');
       }
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -895,11 +925,24 @@ const PostFeed = () => {
                               mb: 2 
                             }}>
                               {currentUser ? (
-                                <>
+                                <Box component="form" onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (newComment.trim()) {
+                                    handleComment(post.id);
+                                  }
+                                }} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 1 }, width: '100%' }}>
                                   <TextField
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Add a comment..."
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        if (newComment.trim()) {
+                                          handleComment(post.id);
+                                        }
+                                      }
+                                    }}
+                                    placeholder="Add a comment... (Press Enter to submit)"
                                     size="small"
                                     fullWidth
                                     sx={{ 
@@ -911,7 +954,7 @@ const PostFeed = () => {
                                     }}
                                   />
                                   <Button
-                                    onClick={() => handleComment(post.id)}
+                                    type="submit"
                                     variant="contained"
                                     size="small"
                                     fullWidth={isMobile}
@@ -941,7 +984,7 @@ const PostFeed = () => {
                                   >
                                     💬 Post Comment
                                   </Button>
-                                </>
+                                </Box>
                               ) : (
                                 <Box sx={{ 
                                   p: 2, 

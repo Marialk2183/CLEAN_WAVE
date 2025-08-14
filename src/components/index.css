@@ -6,48 +6,76 @@ body {
   background: #fff;
   min-height: 100vh;
   font-family: sans-serif;
+  overflow-x: hidden;
 }
 
-/* Mobile touch optimizations */
+/* Essential mobile touch optimizations */
 @media (max-width: 768px) {
-  /* Ensure minimum touch target size (44px) for all interactive elements */
+  /* Ensure minimum touch target size for all interactive elements */
   button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
     min-height: 44px !important;
     min-width: 44px !important;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    cursor: pointer !important;
   }
   
   /* Improve touch feedback */
   button:active, [role="button"]:active {
-    transform: scale(0.95);
-    transition: transform 0.1s ease;
+    transform: scale(0.95) !important;
+    transition: transform 0.1s ease !important;
   }
   
   /* Prevent text selection on buttons */
   button, [role="button"] {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
   }
   
-  /* Improve scrolling on mobile */
-  .MuiDialog-paper {
-    -webkit-overflow-scrolling: touch;
+  /* Better touch targets for Material-UI buttons */
+  .MuiButton-root {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   
-  /* Better touch targets for small buttons */
+  /* Better touch targets for Material-UI tabs */
+  .MuiTab-root {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Better touch targets for Material-UI icon buttons */
   .MuiIconButton-root {
     min-width: 48px !important;
     min-height: 48px !important;
-    padding: 12px !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
   }
   
   /* Improve form inputs on mobile */
-  input, textarea, select {
+  input, textarea, select, .MuiTextField-root input {
     font-size: 16px !important; /* Prevents zoom on iOS */
-    touch-action: manipulation;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Ensure Material-UI text fields work on mobile */
+  .MuiTextField-root .MuiOutlinedInput-root {
+    min-height: 48px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
   }
   
   /* Better spacing for mobile */
@@ -57,22 +85,29 @@ body {
   
   /* Improve button spacing on mobile */
   .MuiButton-root {
-    margin: 4px 0;
+    margin: 4px 0 !important;
+  }
+  
+  /* Ensure all Material-UI components are clickable */
+  .MuiButtonBase-root {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
   }
 }
 
 /* Touch device specific styles */
 @media (hover: none) and (pointer: coarse) {
   /* Remove hover effects on touch devices */
-  button:hover, [role="button"]:hover {
+  button:hover, [role="button"]:hover, .MuiButton-root:hover, .MuiTab-root:hover {
     background-color: inherit !important;
     color: inherit !important;
   }
   
   /* Add active state for touch feedback */
-  button:active, [role="button"]:active {
-    opacity: 0.7;
-    transform: scale(0.95);
+  button:active, [role="button"]:active, .MuiButton-root:active, .MuiTab-root:active {
+    opacity: 0.7 !important;
+    transform: scale(0.95) !important;
   }
 }
 
@@ -86,89 +121,79 @@ body {
   margin: 16px !important;
   max-width: calc(100vw - 32px) !important;
   max-height: calc(100vh - 32px) !important;
-}
-
-/* Additional mobile optimizations */
-@media (max-width: 768px) {
-  /* Prevent horizontal scrolling */
-  body {
-    overflow-x: hidden;
-    width: 100%;
-  }
-  
-  /* Improve button responsiveness */
-  .MuiButton-root {
-    transition: all 0.15s ease;
-    will-change: transform, opacity;
-  }
-  
-  /* Better touch feedback for icons */
-  .MuiIconButton-root {
-    transition: all 0.15s ease;
-    will-change: transform, opacity;
-  }
-  
-  /* Improve form field spacing */
-  .MuiTextField-root {
-    margin-bottom: 16px;
-  }
-  
-  /* Better mobile spacing */
-  .MuiBox-root {
-    gap: 16px;
-  }
-  
-  /* Improve mobile card shadows */
-  .MuiCard-root {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-  }
-  
-  /* Better mobile button sizing */
-  .MuiButton-sizeSmall {
-    min-height: 40px !important;
-    padding: 8px 16px !important;
-  }
-  
-  .MuiButton-sizeMedium {
-    min-height: 44px !important;
-    padding: 10px 20px !important;
-  }
-  
-  .MuiButton-sizeLarge {
-    min-height: 48px !important;
-    padding: 12px 24px !important;
-  }
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* AuthForm specific mobile optimizations */
 @media (max-width: 768px) {
-  /* Improve tab touch targets */
-  .MuiTabs-root .MuiTab-root {
-    min-height: 56px !important;
-    padding: 12px 8px !important;
-    font-size: 0.75rem !important;
-    touch-action: manipulation !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-  
-  /* Better tab spacing on mobile */
+  /* Dark green tabs styling for mobile */
   .MuiTabs-root {
+    background-color: #2E7D32 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3) !important;
     min-height: 56px !important;
     margin-bottom: 24px !important;
   }
   
-  /* Improve form field touch targets */
-  .MuiTextField-root .MuiOutlinedInput-root {
-    min-height: 48px !important;
-    font-size: 16px !important;
+  .MuiTabs-root .MuiTab-root {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    min-height: 56px !important;
+    padding: 12px 8px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .MuiTabs-root .MuiTab-root.Mui-selected {
+    color: #4CAF50 !important;
+    font-weight: 700 !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+  }
+  
+  .MuiTabs-root .MuiTab-root:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+  }
+  
+  .MuiTabs-root .MuiTabs-indicator {
+    background-color: #4CAF50 !important;
+    height: 4px !important;
+    border-radius: 2px !important;
   }
   
   /* Better submit button on mobile */
   .MuiButton-root[type="submit"] {
-    min-height: 56px !important;
+    min-height: 60px !important;
     padding: 16px 24px !important;
-    font-size: 1rem !important;
-    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    width: 100% !important;
+    border: 2px solid #fff !important;
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+  }
+  
+  /* Submit button active state on mobile */
+  .MuiButton-root[type="submit"]:active {
+    transform: scale(0.98) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    opacity: 0.9 !important;
+  }
+  
+  /* Submit button focus state on mobile */
+  .MuiButton-root[type="submit"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5) !important;
   }
   
   /* Improve card spacing on mobile */
@@ -191,182 +216,6 @@ body {
     font-size: 0.875rem !important;
     line-height: 1.4 !important;
   }
-  
-  /* Dark green tabs styling for mobile */
-  .MuiTabs-root {
-    background-color: #2E7D32 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3) !important;
-  }
-  
-  .MuiTabs-root .MuiTab-root {
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-  }
-  
-  .MuiTabs-root .MuiTab-root.Mui-selected {
-    color: #4CAF50 !important;
-    font-weight: 700 !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-radius: 6px !important;
-  }
-  
-  .MuiTabs-root .MuiTab-root:hover {
-    background-color: rgba(255, 255, 255, 0.15) !important;
-    color: #ffffff !important;
-  }
-  
-  .MuiTabs-root .MuiTabs-indicator {
-    background-color: #4CAF50 !important;
-    height: 4px !important;
-    border-radius: 2px !important;
-  }
-}
-
-/* Critical mobile touch fixes */
-@media (max-width: 768px) {
-  /* Ensure all buttons are clickable on mobile */
-  button, .MuiButton-root, [role="button"] {
-    cursor: pointer !important;
-    touch-action: manipulation !important;
-    -webkit-tap-highlight-color: transparent !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-  }
-  
-  /* Fix tab clickability */
-  .MuiTab-root {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    touch-action: manipulation !important;
-  }
-  
-  /* Ensure form inputs work on mobile */
-  input, textarea, select, .MuiTextField-root input {
-    cursor: pointer !important;
-    touch-action: manipulation !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-  
-  /* Fix Material-UI button issues on mobile */
-  .MuiButtonBase-root {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    touch-action: manipulation !important;
-  }
-  
-  /* Ensure proper touch targets */
-  .MuiButton-root, .MuiTab-root, .MuiIconButton-root {
-    min-height: 44px !important;
-    min-width: 44px !important;
-  }
-  
-  /* Fix focus states for mobile */
-  .MuiButton-root:focus, .MuiTab-root:focus {
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3) !important;
-  }
-  
-  /* Improve mobile button responsiveness */
-  .MuiButton-root:active, .MuiTab-root:active {
-    transform: scale(0.95) !important;
-    transition: transform 0.1s ease !important;
-  }
-}
-
-/* Critical AuthForm mobile visibility fixes */
-@media (max-width: 768px) {
-  /* Ensure AuthForm is always visible on mobile */
-  .MuiBox-root:has(.MuiCard-root) {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 9999 !important;
-    background: rgba(0,0,0,0.8) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 16px !important;
-  }
-  
-  /* Ensure Card is visible and properly sized */
-  .MuiCard-root {
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    position: relative !important;
-    z-index: 10000 !important;
-    background: #fff !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
-  }
-  
-  /* Ensure CardContent is properly visible */
-  .MuiCardContent-root {
-    padding: 16px !important;
-    min-height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-  
-  /* Fix mobile form layout */
-  .MuiBox-root[component="form"] {
-    width: 100% !important;
-    gap: 16px !important;
-  }
-  
-  /* Ensure tabs are visible and clickable */
-  .MuiTabs-root {
-    width: 100% !important;
-    margin-bottom: 16px !important;
-    background: #2E7D32 !important;
-    border-radius: 8px !important;
-  }
-  
-  /* Fix mobile tab sizing */
-  .MuiTab-root {
-    min-height: 48px !important;
-    font-size: 0.75rem !important;
-    padding: 8px 4px !important;
-  }
-  
-  /* Ensure submit button is visible and clickable */
-  .MuiButton-root[type="submit"] {
-    width: 100% !important;
-    min-height: 48px !important;
-    margin-top: 16px !important;
-    margin-bottom: 16px !important;
-  }
-}
-
-/* Force mobile AuthForm visibility */
-@media (max-width: 768px) {
-  /* Override any conflicting styles */
-  .MuiBox-root {
-    position: fixed !important;
-    z-index: 9999 !important;
-    background: rgba(0,0,0,0.8) !important;
-  }
-  
-  /* Ensure form elements are visible */
-  .MuiTextField-root, .MuiButton-root, .MuiTabs-root {
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: block !important;
-  }
-  
-  /* Fix any overflow issues */
-  .MuiCard-root {
-    overflow: visible !important;
-    max-height: 90vh !important;
-    overflow-y: auto !important;
-  }
 }
 
 /* iOS specific fixes */
@@ -381,6 +230,13 @@ body {
     -webkit-appearance: none !important;
     -webkit-border-radius: 0 !important;
   }
+  
+  /* iOS submit button specific fixes */
+  .MuiButton-root[type="submit"] {
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+  }
 }
 
 /* Android specific fixes */
@@ -393,30 +249,69 @@ body {
   .MuiButton-root:active, .MuiTab-root:active {
     background-color: rgba(0,0,0,0.1) !important;
   }
+  
+  /* Android submit button specific fixes */
+  .MuiButton-root[type="submit"]:active {
+    background-color: rgba(0,0,0,0.2) !important;
+  }
 }
 
-/* AuthForm touch device specific styles */
-@media (hover: none) and (pointer: coarse) {
-  /* Remove hover effects on tabs */
-  .MuiTabs-root .MuiTab-root:hover {
-    background-color: transparent !important;
+/* CRITICAL MOBILE FIXES - Force button visibility and clickability */
+@media (max-width: 768px) {
+  /* Force all buttons to be visible and clickable */
+  button, .MuiButton-root, [role="button"] {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   
-  /* Add active state for tab touch feedback */
-  .MuiTabs-root .MuiTab-root:active {
-    opacity: 0.7;
-    transform: scale(0.95);
+  /* Force submit button to be extra clickable */
+  .MuiButton-root[type="submit"] {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    z-index: 9999 !important;
+    position: relative !important;
   }
   
-  /* Remove hover effects on submit button */
-  .MuiButton-root[type="submit"]:hover {
-    transform: none !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+  /* Force tabs to be clickable */
+  .MuiTab-root {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   
-  /* Add active state for submit button touch feedback */
-  .MuiButton-root[type="submit"]:active {
-    transform: scale(0.98) !important;
-    opacity: 0.9;
+  /* Force form inputs to be interactive */
+  input, textarea, select, .MuiTextField-root input {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Ensure Material-UI components are fully functional */
+  .MuiButtonBase-root {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 }

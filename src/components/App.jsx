@@ -132,7 +132,20 @@ export default function App() {
         </div>
       </header>
       {!user ? (
-        <AuthForm onSignup={handleSignup} onLogin={handleLogin} />
+        <AuthForm 
+          onAuth={(email, password, role) => {
+            console.log('AuthForm onAuth called:', { email, password, role });
+            if (role === 'admin') {
+              setRole('admin');
+            } else if (role === 'volunteer') {
+              setRole('volunteer');
+            } else if (role === 'ngo') {
+              setRole('ngo');
+            }
+          }}
+          onSignup={handleSignup} 
+          onLogin={handleLogin} 
+        />
       ) : (
         <>
           <EventsMap events={events} />

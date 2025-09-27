@@ -1,0 +1,81 @@
+﻿import React, { useState } from "react";
+import { Button, Modal, Form, Spinner, Alert, Card } from 'react-bootstrap';
+import { Typography, Box } from '@mui/material';
+
+const COLORS = {
+  accentGreen: '#A8E6CF',
+  accentBlue: '#B3E5FC',
+  background: '#F9FAFB',
+  card: '#ffffff',
+  blackHeader: '#1C1C1C',
+  textLight: '#ffffff',
+  textDark: '#222',
+};
+
+export default function ImageClassifierChatbot({ floating = true }) {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setResult(null);
+    setError("");
+  };
+
+  const handleClassify = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      setError("Please select an image file.");
+      return;
+    }
+    setLoading(true);
+    setResult(null);
+    setError("");
+    
+    try {
+      // Use TensorFlow backend API for real image classification
+      const classification = await classifyWaste(file);
+      setResult(classification);
+    } catch (err) {
+      console.error("Classification error:", err);
+      setError("Failed to classify image. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const classifyWaste = async (file) => {
+    try {
+      // Create FormData to send file to backend
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Call the TensorFlow backend API
+      const response = await fetch('http://localhost:5000/classify-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      return {
+        label: result.label,
+        score: result.score,
+        suggestion: result.suggestion || "Check local waste disposal guidelines"
+      };
+    } catch (error) {
+      console.error('Classification error:', error);
+      throw error;
+    }
+  };
